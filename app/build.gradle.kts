@@ -60,6 +60,9 @@ dependencies {
     // On-device iris/face-mesh landmarks, NPU-accelerated where supported.
     implementation("com.google.mediapipe:tasks-vision:0.10.14")
 
+    // QR scan for rig pairing (decodes the ws://host:port/?join=CODE the rig's start screen shows).
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
     testImplementation("junit:junit:4.13.2")
     // Unit tests (plain JVM, no Robolectric) hit the Android SDK stub jar's
     // org.json, which throws "not mocked" at runtime. This pulls in the real

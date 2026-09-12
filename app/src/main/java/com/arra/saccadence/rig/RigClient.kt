@@ -25,6 +25,9 @@ class RigClient(
     private val sessionCode: String,
     private val onEvent: (RigEvent) -> Unit,
     private val onStateChange: (RigConnectionState) -> Unit = {},
+    /** Called after each failed connect attempt, with the running streak count —
+     *  lets the UI warn ("can't reach the rig") instead of showing "waiting" forever. */
+    private val onConnectFailure: (attempt: Int) -> Unit = {},
 ) {
     private val client = OkHttpClient.Builder()
         .readTimeout(0, TimeUnit.MILLISECONDS) // WS is long-lived; no read timeout.
@@ -34,6 +37,7 @@ class RigClient(
     private var socket: WebSocket? = null
     private var closedByCaller = false
     private var reconnectDelayMs = 500L
+    private var failureStreak = 0
 
     fun connect() {
         closedByCaller = false
@@ -46,6 +50,10 @@ class RigClient(
         socket = null
     }
 
+    fun send(raw: String) {
+        socket?.send(raw)
+    }
+
     private fun openSocket() {
         val request = Request.Builder().url("ws://$host:$port/").build()
         setState(RigConnectionState.CONNECTING)
@@ -53,6 +61,7 @@ class RigClient(
         socket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 reconnectDelayMs = 500L
+                failureStreak = 0
                 setState(RigConnectionState.CONNECTED)
                 webSocket.send(joinMessage(sessionCode))
             }
@@ -64,15 +73,25 @@ class RigClient(
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+                android.util.Log.w("RigClient", "closed: code=$code reason=$reason host=$host:$port")
                 setState(RigConnectionState.DISCONNECTED)
+                reportFailure()
                 scheduleReconnect()
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                android.util.Log.w("RigClient", "connect failed to $host:$port: ${t.javaClass.simpleName}: ${t.message}")
                 setState(RigConnectionState.DISCONNECTED)
+                reportFailure()
                 scheduleReconnect()
             }
         })
+    }
+
+    private fun reportFailure() {
+        failureStreak++
+        val attempt = failureStreak
+        mainHandler.post { onConnectFailure(attempt) }
     }
 
     private fun scheduleReconnect() {

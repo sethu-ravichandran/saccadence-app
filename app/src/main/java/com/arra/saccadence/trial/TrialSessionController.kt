@@ -8,6 +8,7 @@ import com.arra.saccadence.landmark.LandmarkFrame
 import com.arra.saccadence.rig.RigClient
 import com.arra.saccadence.rig.RigConnectionState
 import com.arra.saccadence.rig.RigEvent
+import com.arra.saccadence.rig.phoneReadyMessage
 import com.arra.saccadence.voice.SpokenInstructions
 
 sealed interface TrialPhase {
@@ -31,11 +32,16 @@ sealed interface TrialPhase {
  * rig events arrive on the main thread (via [RigClient]'s own marshalling)
  * — buffer access is synchronized because both can be live at once.
  */
+private const val CONNECT_FAILURE_WARNING_THRESHOLD = 3
+
 class TrialSessionController(
     private val patientId: String,
     private val trialRepository: TrialRepository,
     private val voice: SpokenInstructions,
     private val onPhaseChange: (TrialPhase) -> Unit,
+    /** Fires once reconnect attempts to the rig start piling up, with a message the
+     *  UI can show instead of silently retrying forever; fires with null once connected. */
+    private val onConnectionWarning: (String?) -> Unit = {},
 ) {
     private val lock = Any()
 
@@ -70,8 +76,26 @@ class TrialSessionController(
             host = host, port = port, sessionCode = sessionCode,
             onEvent = ::handleRigEvent,
             onStateChange = { state ->
+                if (state == RigConnectionState.CONNECTED || state == RigConnectionState.JOINED) {
+                    onConnectionWarning(null)
+                }
                 if (phase == TrialPhase.Connecting || phase == TrialPhase.WaitingForRig) {
                     phase = if (state == RigConnectionState.JOINED) TrialPhase.SetupCalibration else TrialPhase.WaitingForRig
+                }
+            },
+            onConnectFailure = { attempt ->
+                // A few quick attempts are normal (the rig might just be mid-boot) —
+                // only warn once it looks like this address genuinely isn't reachable.
+                if (attempt == CONNECT_FAILURE_WARNING_THRESHOLD) {
+                    val hint = if (host == "localhost" || host == "127.0.0.1") {
+                        "The rig was opened via localhost on the laptop, so its QR/address " +
+                            "isn't reachable from this phone. Reopen it using the laptop's LAN IP " +
+                            "(printed in the rig's terminal on startup), then re-pair."
+                    } else {
+                        "Check that $host:$port is the rig's current LAN address, both devices " +
+                            "are on the same network, and the rig is still running."
+                    }
+                    onConnectionWarning("Can't reach the rig at $host:$port. $hint")
                 }
             },
         ).also { it.connect() }
@@ -85,6 +109,11 @@ class TrialSessionController(
     /** UI calls this once it has consumed a [TrialPhase.Complete] result, so the controller can accept the next trial. */
     fun acknowledgeComplete() {
         if (phase is TrialPhase.Complete) phase = TrialPhase.Ready
+    }
+
+    /** UI calls this from the calibration screen's "Start test" tap, once the marker has locked. See [phoneReadyMessage]. */
+    fun sendPhoneReady() {
+        rigClient?.send(phoneReadyMessage())
     }
 
     // ---- camera-thread callbacks ---------------------------------------
@@ -145,6 +174,11 @@ class TrialSessionController(
                     val samples = synchronized(lock) { preMarkerBuffer.toList() }
                     if (start != null) {
                         preCalibrationResult = ClockCalibrator.calibrate("pre", start.trialId, samples, start.laptopTimeMs, event.laptopTimeMs)
+                        android.util.Log.d(
+                            "SaccCal",
+                            "pre-cal done: samples=${samples.size} active=${samples.count { it.active }} " +
+                                "status=${preCalibrationResult?.status} offset=${preCalibrationResult?.offsetMs} jitter=${preCalibrationResult?.jitterMs}"
+                        )
                     }
                 }
                 "post" -> {
@@ -153,6 +187,10 @@ class TrialSessionController(
                     val postResult = if (start != null) {
                         ClockCalibrator.calibrate("post", start.trialId, samples, start.laptopTimeMs, event.laptopTimeMs)
                     } else null
+                    android.util.Log.d(
+                        "SaccCal",
+                        "post-cal done: samples=${samples.size} active=${samples.count { it.active }} status=${postResult?.status}"
+                    )
                     completeTrial(postResult, postCalStartEvent?.laptopTimeMs)
                 }
             }

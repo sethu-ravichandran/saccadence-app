@@ -1,5 +1,6 @@
 package com.arra.saccadence.intake
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,15 +37,18 @@ fun SymptomsScreen(
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        StepProgress(step = 3, label = "Symptom / context")
+        StepProgress(step = 3, total = 7, label = "Symptom / context")
 
         SymptomFlag.entries.forEach { flag ->
+            val checked = session.symptoms[flag] == true
             Row(
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { session.symptoms[flag] = !checked },
             ) {
                 Checkbox(
-                    checked = session.symptoms[flag] == true,
+                    checked = checked,
                     onCheckedChange = { session.symptoms[flag] = it },
                 )
                 Text(flag.question)
@@ -68,7 +72,7 @@ fun SymptomsScreen(
                 .padding(top = 16.dp),
         ) {
             TextButton(onClick = onBack) { Text("Back") }
-            Button(onClick = onNext) { Text("Continue to calibration") }
+            Button(onClick = onNext) { Text("Continue to consent") }
         }
     }
 }

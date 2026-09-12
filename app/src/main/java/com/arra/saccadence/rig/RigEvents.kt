@@ -139,9 +139,19 @@ fun parseRigEvent(raw: String): RigEvent {
     }.getOrElse { RigEvent.Unknown(null, raw) }
 }
 
-/** The only message the phone ever sends: joining a rig-registered session. */
+/** Joins a rig-registered session. The first message the phone ever sends. */
 fun joinMessage(sessionCode: String): String =
     JSONObject().put("type", "join").put("sessionCode", sessionCode).toString()
+
+/**
+ * Sent when the clinician taps "Start test" on the calibration screen once
+ * the marker has locked. Purely informational — the rig logs it so the
+ * clinician sees confirmation before pressing Space, but calibration is
+ * still ended by that keypress, not by this message; see marker-protocol.md
+ * and CalibrationScreen's own doc comment for why this stays operator-paced.
+ */
+fun phoneReadyMessage(): String =
+    JSONObject().put("type", "phone_ready").toString()
 
 private fun JSONObject.optStringOrNull(name: String): String? =
     if (has(name) && !isNull(name)) getString(name) else null

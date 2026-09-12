@@ -88,7 +88,16 @@ object TrialAssembler {
             val stimulus = SweepStimulus(
                 passIndex = start.passIndex,
                 direction = start.direction,
-                commandedVelocityDegPerSec = start.commandedVelocityDegPerSec,
+                // The rig emits commandedVelocityDegPerSec as an unsigned magnitude
+                // (direction is the separate sign-bearing field on the wire — see
+                // saccadence-rig's trialController.js/_startPursuitPass and its own
+                // test asserting a positive value regardless of direction). Signing
+                // it here from `direction` is what keeps gain positive for both
+                // sweep directions; PursuitGainFitter's own unit tests pass an
+                // already-signed value directly, bypassing this assembly step, so
+                // they don't catch a missing sign here — this abs()-then-reapply is
+                // idempotent if the rig is ever changed to send it pre-signed.
+                commandedVelocityDegPerSec = kotlin.math.abs(start.commandedVelocityDegPerSec) * start.direction,
                 startPhoneTimeMs = toPhoneTimeMs(start.laptopTimeMs),
                 endPhoneTimeMs = toPhoneTimeMs(end.laptopTimeMs),
             )
