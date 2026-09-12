@@ -54,5 +54,15 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
     implementation("androidx.navigation:navigation-compose:2.8.3")
 
+    // Rig pairing over the clinic LAN (WebSocket client).
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // On-device iris/face-mesh landmarks, NPU-accelerated where supported.
+    implementation("com.google.mediapipe:tasks-vision:0.10.14")
+
     testImplementation("junit:junit:4.13.2")
+    // Unit tests (plain JVM, no Robolectric) hit the Android SDK stub jar's
+    // org.json, which throws "not mocked" at runtime. This pulls in the real
+    // implementation under the same package name for the test classpath only.
+    testImplementation("org.json:json:20240303")
 }

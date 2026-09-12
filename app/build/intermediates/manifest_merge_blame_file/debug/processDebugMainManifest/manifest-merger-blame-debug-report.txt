@@ -19,134 +19,178 @@
 15        android:required="true" />
 15-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:5:62-85
 16
-17    <permission
-17-->[androidx.core:core:1.13.1] /Users/sethu/.gradle/caches/9.0.0/transforms/b12bc37f3c78bd3e35ab75634da05b99/transformed/core-1.13.1/AndroidManifest.xml:22:5-24:47
-18        android:name="com.arra.saccadence.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
-18-->[androidx.core:core:1.13.1] /Users/sethu/.gradle/caches/9.0.0/transforms/b12bc37f3c78bd3e35ab75634da05b99/transformed/core-1.13.1/AndroidManifest.xml:23:9-81
-19        android:protectionLevel="signature" />
-19-->[androidx.core:core:1.13.1] /Users/sethu/.gradle/caches/9.0.0/transforms/b12bc37f3c78bd3e35ab75634da05b99/transformed/core-1.13.1/AndroidManifest.xml:24:9-44
-20
-21    <uses-permission android:name="com.arra.saccadence.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
-21-->[androidx.core:core:1.13.1] /Users/sethu/.gradle/caches/9.0.0/transforms/b12bc37f3c78bd3e35ab75634da05b99/transformed/core-1.13.1/AndroidManifest.xml:26:5-97
-21-->[androidx.core:core:1.13.1] /Users/sethu/.gradle/caches/9.0.0/transforms/b12bc37f3c78bd3e35ab75634da05b99/transformed/core-1.13.1/AndroidManifest.xml:26:22-94
-22
-23    <application
-23-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:7:5-23:19
-24        android:allowBackup="true"
-24-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:8:9-35
-25        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
-25-->[androidx.core:core:1.13.1] /Users/sethu/.gradle/caches/9.0.0/transforms/b12bc37f3c78bd3e35ab75634da05b99/transformed/core-1.13.1/AndroidManifest.xml:28:18-86
-26        android:debuggable="true"
-27        android:extractNativeLibs="false"
-28        android:icon="@mipmap/ic_launcher"
-28-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:11:9-43
-29        android:label="Saccadence"
-29-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:9:9-35
-30        android:roundIcon="@mipmap/ic_launcher_round"
-30-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:12:9-54
-31        android:theme="@android:style/Theme.Material.Light.NoActionBar" >
-31-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:10:9-72
-32        <activity
-32-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:14:9-22:20
-33            android:name="com.arra.saccadence.MainActivity"
-33-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:15:13-41
-34            android:exported="true"
-34-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:16:13-36
-35            android:screenOrientation="portrait" >
-35-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:17:13-49
-36            <intent-filter>
-36-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:18:13-21:29
-37                <action android:name="android.intent.action.MAIN" />
-37-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:19:17-69
-37-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:19:25-66
-38
-39                <category android:name="android.intent.category.LAUNCHER" />
-39-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:20:17-77
-39-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:20:27-74
-40            </intent-filter>
-41        </activity>
-42
-43        <service
-43-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:24:9-33:19
-44            android:name="androidx.camera.core.impl.MetadataHolderService"
-44-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:25:13-75
-45            android:enabled="false"
-45-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:26:13-36
-46            android:exported="false" >
-46-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:27:13-37
-47            <meta-data
-47-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:30:13-32:89
-48                android:name="androidx.camera.core.impl.MetadataHolderService.DEFAULT_CONFIG_PROVIDER"
-48-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:31:17-103
-49                android:value="androidx.camera.camera2.Camera2Config$DefaultProvider" />
-49-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:32:17-86
-50        </service>
+17    <!--
+18         Pairing to the rig's relay is a plaintext ws:// connection over the clinic LAN
+19         (see saccadence-rig) — there is no cloud endpoint this could leak to, so
+20         cleartext is scoped to that reality, not a general relaxation.
+21    -->
+22    <uses-permission android:name="android.permission.INTERNET" />
+22-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:10:5-67
+22-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:10:22-64
+23    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+23-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:11:5-79
+23-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:11:22-76
+24
+25    <permission
+25-->[androidx.core:core:1.13.1] /Users/sethu/.gradle/caches/9.0.0/transforms/b12bc37f3c78bd3e35ab75634da05b99/transformed/core-1.13.1/AndroidManifest.xml:22:5-24:47
+26        android:name="com.arra.saccadence.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+26-->[androidx.core:core:1.13.1] /Users/sethu/.gradle/caches/9.0.0/transforms/b12bc37f3c78bd3e35ab75634da05b99/transformed/core-1.13.1/AndroidManifest.xml:23:9-81
+27        android:protectionLevel="signature" />
+27-->[androidx.core:core:1.13.1] /Users/sethu/.gradle/caches/9.0.0/transforms/b12bc37f3c78bd3e35ab75634da05b99/transformed/core-1.13.1/AndroidManifest.xml:24:9-44
+28
+29    <uses-permission android:name="com.arra.saccadence.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+29-->[androidx.core:core:1.13.1] /Users/sethu/.gradle/caches/9.0.0/transforms/b12bc37f3c78bd3e35ab75634da05b99/transformed/core-1.13.1/AndroidManifest.xml:26:5-97
+29-->[androidx.core:core:1.13.1] /Users/sethu/.gradle/caches/9.0.0/transforms/b12bc37f3c78bd3e35ab75634da05b99/transformed/core-1.13.1/AndroidManifest.xml:26:22-94
+30
+31    <application
+31-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:13:5-30:19
+32        android:allowBackup="true"
+32-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:14:9-35
+33        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+33-->[androidx.core:core:1.13.1] /Users/sethu/.gradle/caches/9.0.0/transforms/b12bc37f3c78bd3e35ab75634da05b99/transformed/core-1.13.1/AndroidManifest.xml:28:18-86
+34        android:debuggable="true"
+35        android:extractNativeLibs="false"
+36        android:icon="@mipmap/ic_launcher"
+36-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:17:9-43
+37        android:label="Saccadence"
+37-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:15:9-35
+38        android:roundIcon="@mipmap/ic_launcher_round"
+38-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:18:9-54
+39        android:theme="@android:style/Theme.Material.Light.NoActionBar"
+39-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:16:9-72
+40        android:usesCleartextTraffic="true" >
+40-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:19:9-44
+41        <activity
+41-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:21:9-29:20
+42            android:name="com.arra.saccadence.MainActivity"
+42-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:22:13-41
+43            android:exported="true"
+43-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:23:13-36
+44            android:screenOrientation="portrait" >
+44-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:24:13-49
+45            <intent-filter>
+45-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:25:13-28:29
+46                <action android:name="android.intent.action.MAIN" />
+46-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:26:17-69
+46-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:26:25-66
+47
+48                <category android:name="android.intent.category.LAUNCHER" />
+48-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:27:17-77
+48-->/Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:27:27-74
+49            </intent-filter>
+50        </activity>
 51
-52        <provider
-52-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
-53            android:name="androidx.startup.InitializationProvider"
-53-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:25:13-67
-54            android:authorities="com.arra.saccadence.androidx-startup"
-54-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:26:13-68
+52        <service
+52-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:24:9-33:19
+53            android:name="androidx.camera.core.impl.MetadataHolderService"
+53-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:25:13-75
+54            android:enabled="false"
+54-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:26:13-36
 55            android:exported="false" >
-55-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:27:13-37
+55-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:27:13-37
 56            <meta-data
-56-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
-57                android:name="androidx.emoji2.text.EmojiCompatInitializer"
-57-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:30:17-75
-58                android:value="androidx.startup" />
-58-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:31:17-49
-59            <meta-data
-59-->[androidx.lifecycle:lifecycle-process:2.8.6] /Users/sethu/.gradle/caches/9.0.0/transforms/14d242f584fbca3c6ae03c1a1c5fd52b/transformed/lifecycle-process-2.8.6/AndroidManifest.xml:29:13-31:52
-60                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
-60-->[androidx.lifecycle:lifecycle-process:2.8.6] /Users/sethu/.gradle/caches/9.0.0/transforms/14d242f584fbca3c6ae03c1a1c5fd52b/transformed/lifecycle-process-2.8.6/AndroidManifest.xml:30:17-78
-61                android:value="androidx.startup" />
-61-->[androidx.lifecycle:lifecycle-process:2.8.6] /Users/sethu/.gradle/caches/9.0.0/transforms/14d242f584fbca3c6ae03c1a1c5fd52b/transformed/lifecycle-process-2.8.6/AndroidManifest.xml:31:17-49
-62            <meta-data
-62-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:29:13-31:52
-63                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-63-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:30:17-85
-64                android:value="androidx.startup" />
-64-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:31:17-49
-65        </provider>
-66
-67        <receiver
-67-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:34:9-52:20
-68            android:name="androidx.profileinstaller.ProfileInstallReceiver"
-68-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:35:13-76
-69            android:directBootAware="false"
-69-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:36:13-44
-70            android:enabled="true"
-70-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:37:13-35
-71            android:exported="true"
-71-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:38:13-36
-72            android:permission="android.permission.DUMP" >
-72-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:39:13-57
-73            <intent-filter>
-73-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:40:13-42:29
-74                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
-74-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:17-91
-74-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:25-88
-75            </intent-filter>
-76            <intent-filter>
-76-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:43:13-45:29
-77                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
-77-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:17-85
-77-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:25-82
-78            </intent-filter>
-79            <intent-filter>
-79-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:46:13-48:29
-80                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
-80-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:17-88
-80-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:25-85
-81            </intent-filter>
+56-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:30:13-32:89
+57                android:name="androidx.camera.core.impl.MetadataHolderService.DEFAULT_CONFIG_PROVIDER"
+57-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:31:17-103
+58                android:value="androidx.camera.camera2.Camera2Config$DefaultProvider" />
+58-->[androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:32:17-86
+59        </service>
+60
+61        <provider
+61-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
+62            android:name="androidx.startup.InitializationProvider"
+62-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:25:13-67
+63            android:authorities="com.arra.saccadence.androidx-startup"
+63-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:26:13-68
+64            android:exported="false" >
+64-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:27:13-37
+65            <meta-data
+65-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
+66                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+66-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:30:17-75
+67                android:value="androidx.startup" />
+67-->[androidx.emoji2:emoji2:1.3.0] /Users/sethu/.gradle/caches/9.0.0/transforms/5288e246157be9307960c936cb8699f2/transformed/emoji2-1.3.0/AndroidManifest.xml:31:17-49
+68            <meta-data
+68-->[androidx.lifecycle:lifecycle-process:2.8.6] /Users/sethu/.gradle/caches/9.0.0/transforms/14d242f584fbca3c6ae03c1a1c5fd52b/transformed/lifecycle-process-2.8.6/AndroidManifest.xml:29:13-31:52
+69                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+69-->[androidx.lifecycle:lifecycle-process:2.8.6] /Users/sethu/.gradle/caches/9.0.0/transforms/14d242f584fbca3c6ae03c1a1c5fd52b/transformed/lifecycle-process-2.8.6/AndroidManifest.xml:30:17-78
+70                android:value="androidx.startup" />
+70-->[androidx.lifecycle:lifecycle-process:2.8.6] /Users/sethu/.gradle/caches/9.0.0/transforms/14d242f584fbca3c6ae03c1a1c5fd52b/transformed/lifecycle-process-2.8.6/AndroidManifest.xml:31:17-49
+71            <meta-data
+71-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:29:13-31:52
+72                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+72-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:30:17-85
+73                android:value="androidx.startup" />
+73-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:31:17-49
+74        </provider>
+75
+76        <receiver
+76-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:34:9-52:20
+77            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+77-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:35:13-76
+78            android:directBootAware="false"
+78-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:36:13-44
+79            android:enabled="true"
+79-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:37:13-35
+80            android:exported="true"
+80-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:38:13-36
+81            android:permission="android.permission.DUMP" >
+81-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:39:13-57
 82            <intent-filter>
-82-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:49:13-51:29
-83                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
-83-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:17-95
-83-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:25-92
+82-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:40:13-42:29
+83                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+83-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:17-91
+83-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:25-88
 84            </intent-filter>
-85        </receiver>
-86    </application>
-87
-88</manifest>
+85            <intent-filter>
+85-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:43:13-45:29
+86                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+86-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:17-85
+86-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:25-82
+87            </intent-filter>
+88            <intent-filter>
+88-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:46:13-48:29
+89                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+89-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:17-88
+89-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:25-85
+90            </intent-filter>
+91            <intent-filter>
+91-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:49:13-51:29
+92                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+92-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:17-95
+92-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/sethu/.gradle/caches/9.0.0/transforms/eda7de6067060124c5286ab39bc8cbe2/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:25-92
+93            </intent-filter>
+94        </receiver>
+95
+96        <service
+96-->[com.google.android.datatransport:transport-backend-cct:3.1.0] /Users/sethu/.gradle/caches/9.0.0/transforms/86b432e6d391f56d200ef81c94e96147/transformed/transport-backend-cct-3.1.0/AndroidManifest.xml:29:9-35:19
+97            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+97-->[com.google.android.datatransport:transport-backend-cct:3.1.0] /Users/sethu/.gradle/caches/9.0.0/transforms/86b432e6d391f56d200ef81c94e96147/transformed/transport-backend-cct-3.1.0/AndroidManifest.xml:30:13-103
+98            android:exported="false" >
+98-->[com.google.android.datatransport:transport-backend-cct:3.1.0] /Users/sethu/.gradle/caches/9.0.0/transforms/86b432e6d391f56d200ef81c94e96147/transformed/transport-backend-cct-3.1.0/AndroidManifest.xml:31:13-37
+99            <meta-data
+99-->[com.google.android.datatransport:transport-backend-cct:3.1.0] /Users/sethu/.gradle/caches/9.0.0/transforms/86b432e6d391f56d200ef81c94e96147/transformed/transport-backend-cct-3.1.0/AndroidManifest.xml:32:13-34:39
+100                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+100-->[com.google.android.datatransport:transport-backend-cct:3.1.0] /Users/sethu/.gradle/caches/9.0.0/transforms/86b432e6d391f56d200ef81c94e96147/transformed/transport-backend-cct-3.1.0/AndroidManifest.xml:33:17-94
+101                android:value="cct" />
+101-->[com.google.android.datatransport:transport-backend-cct:3.1.0] /Users/sethu/.gradle/caches/9.0.0/transforms/86b432e6d391f56d200ef81c94e96147/transformed/transport-backend-cct-3.1.0/AndroidManifest.xml:34:17-36
+102        </service>
+103        <service
+103-->[com.google.android.datatransport:transport-runtime:3.1.0] /Users/sethu/.gradle/caches/9.0.0/transforms/dd99f35f1bbf5b134871f94fafbd5fd6/transformed/transport-runtime-3.1.0/AndroidManifest.xml:26:9-30:19
+104            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+104-->[com.google.android.datatransport:transport-runtime:3.1.0] /Users/sethu/.gradle/caches/9.0.0/transforms/dd99f35f1bbf5b134871f94fafbd5fd6/transformed/transport-runtime-3.1.0/AndroidManifest.xml:27:13-117
+105            android:exported="false"
+105-->[com.google.android.datatransport:transport-runtime:3.1.0] /Users/sethu/.gradle/caches/9.0.0/transforms/dd99f35f1bbf5b134871f94fafbd5fd6/transformed/transport-runtime-3.1.0/AndroidManifest.xml:28:13-37
+106            android:permission="android.permission.BIND_JOB_SERVICE" >
+106-->[com.google.android.datatransport:transport-runtime:3.1.0] /Users/sethu/.gradle/caches/9.0.0/transforms/dd99f35f1bbf5b134871f94fafbd5fd6/transformed/transport-runtime-3.1.0/AndroidManifest.xml:29:13-69
+107        </service>
+108
+109        <receiver
+109-->[com.google.android.datatransport:transport-runtime:3.1.0] /Users/sethu/.gradle/caches/9.0.0/transforms/dd99f35f1bbf5b134871f94fafbd5fd6/transformed/transport-runtime-3.1.0/AndroidManifest.xml:32:9-34:40
+110            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+110-->[com.google.android.datatransport:transport-runtime:3.1.0] /Users/sethu/.gradle/caches/9.0.0/transforms/dd99f35f1bbf5b134871f94fafbd5fd6/transformed/transport-runtime-3.1.0/AndroidManifest.xml:33:13-132
+111            android:exported="false" />
+111-->[com.google.android.datatransport:transport-runtime:3.1.0] /Users/sethu/.gradle/caches/9.0.0/transforms/dd99f35f1bbf5b134871f94fafbd5fd6/transformed/transport-runtime-3.1.0/AndroidManifest.xml:34:13-37
+112    </application>
+113
+114</manifest>
