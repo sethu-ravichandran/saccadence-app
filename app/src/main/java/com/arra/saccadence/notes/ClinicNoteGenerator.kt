@@ -1,6 +1,7 @@
 package com.arra.saccadence.notes
 
 import com.arra.saccadence.trial.TrialResult
+import com.google.mediapipe.tasks.genai.llminference.LlmInference
 
 /**
  * The only fields a note generator is allowed to read — deliberately not
@@ -82,14 +83,30 @@ class DeterministicClinicNoteGenerator : ClinicNoteGenerator {
  */
 class GemmaClinicNoteGenerator(
     private val modelPath: String?,
+    // How to build the actual LlmInference for a given path — injected so
+    // this class never needs an Android Context itself. That's what keeps
+    // it plain-JVM-testable: a test can hand in a lambda that throws,
+    // without needing a fake Context to satisfy the Android stub jar.
+    private val createInference: (String) -> LlmInference = { path ->
+        error("createInference must be supplied by the caller; no default in a non-Android build: $path")
+    },
     private val deterministic: DeterministicClinicNoteGenerator = DeterministicClinicNoteGenerator(),
 ) : ClinicNoteGenerator {
+
+    // Loaded on first use, not at construction — model load blocks for a
+    // couple of seconds and this class is built during Compose setup, which
+    // must not stall. NOTE: the first call to generate() still pays that
+    // cost synchronously on whichever thread calls it — see class doc below
+    // on why this hasn't been moved off the main thread yet.
+    private val llmInference: LlmInference? by lazy {
+        modelPath?.let { path -> createInference(path) }
+    }
 
     override fun generate(input: NoteInput): ClinicNote {
         val template = deterministic.generate(input)
         if (modelPath == null) return template // no model on this device — deterministic is the whole story, not a degraded fallback.
 
-        val rewritten = runCatching { rewriteWithGemma(input, template.text) }.getOrNull() ?: return template
+        val rewritten = runCatching { rewriteWithGemma(template.text) }.getOrNull() ?: return template
         return if (NoteGuardrail.isSafe(rewritten, input)) {
             ClinicNote(text = rewritten, isDraft = true, source = "gemma")
         } else {
@@ -97,9 +114,24 @@ class GemmaClinicNoteGenerator(
         }
     }
 
-    /** Not implemented in this build — see the class doc. Throws so [generate] falls back cleanly. */
-    private fun rewriteWithGemma(input: NoteInput, templateText: String): String {
-        throw UnsupportedOperationException("Gemma model not bundled in this build; see GemmaClinicNoteGenerator doc")
+    /**
+     * Rewrites already-computed template text into more natural language.
+     * Deliberately given only [templateText], never [NoteInput] or any raw
+     * trial data directly — the model has no path to a number or claim that
+     * wasn't already in the deterministic sentence, which is what makes
+     * [NoteGuardrail] able to check it at all.
+     */
+    private fun rewriteWithGemma(templateText: String): String {
+        val model = llmInference ?: throw IllegalStateException("no model configured")
+        val prompt = "Rewrite the following clinical note as one short, plain-language " +
+            "paragraph for a clinician. Do not add any number, fact, or diagnosis that " +
+            "is not already stated below. Keep every measurement exactly as given.\n\n" +
+            templateText
+        return model.generateResponse(prompt)
+    }
+
+    fun close() {
+        llmInference?.close()
     }
 }
 

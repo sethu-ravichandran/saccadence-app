@@ -69,7 +69,20 @@ class MainActivity : ComponentActivity() {
                     val session = remember { PatientSession() }
                     val repository = remember { PatientRepository(context) }
                     val trialRepository = remember { TrialRepository.forContext(context) }
-                    val noteGenerator = remember { GemmaClinicNoteGenerator(modelPath = null) }
+                    val noteGenerator = remember {
+                        GemmaClinicNoteGenerator(
+                            modelPath = null,
+                            createInference = { path ->
+                                com.google.mediapipe.tasks.genai.llminference.LlmInference.createFromOptions(
+                                    context,
+                                    com.google.mediapipe.tasks.genai.llminference.LlmInference.LlmInferenceOptions.builder()
+                                        .setModelPath(path)
+                                        .setMaxTokens(128)
+                                        .build()
+                                )
+                            },
+                        )
+                    }
 
                     var screen by remember { mutableStateOf(Screen.SPLASH) }
                     var phase by remember { mutableStateOf<TrialPhase>(TrialPhase.Connecting) }

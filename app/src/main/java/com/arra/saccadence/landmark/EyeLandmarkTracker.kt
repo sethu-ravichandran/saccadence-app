@@ -58,13 +58,25 @@ class EyeLandmarkTracker(context: Context) {
             )
             .setRunningMode(RunningMode.LIVE_STREAM)
             .setNumFaces(1)
-            .setResultListener { result, _ -> lastResult = result }
-            .setErrorListener { lastError = it }
+            .setResultListener { result, _ -> lastResult = result; callbackCount++ }
+            .setErrorListener { lastError = it; errorCount++ }
             .build()
     )
 
     @Volatile private var lastResult: FaceLandmarkerResult? = null
-    @Volatile private var lastError: Throwable? = null
+    @Volatile var lastError: Throwable? = null
+        private set
+    /** Increments once per actual detection callback — distinct from how many times [latestFrame] is polled. */
+    @Volatile var callbackCount: Int = 0
+        private set
+    @Volatile var errorCount: Int = 0
+        private set
+    /** Raw landmark count of the most recent result: -1 if no callback has fired yet, 0 if the last callback found no face. */
+    val lastFaceLandmarkCount: Int
+        get() {
+            val result = lastResult ?: return -1
+            return result.faceLandmarks().firstOrNull()?.size ?: 0
+        }
 
     /** Feeds one camera frame in; the result (if any) arrives asynchronously via the listener above. */
     fun analyze(image: ImageProxy, phoneTimeMs: Long) {

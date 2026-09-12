@@ -63,6 +63,11 @@ dependencies {
     // QR scan for rig pairing (decodes the ws://host:port/?join=CODE the rig's start screen shows).
     implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
+    // On-device LLM rewrite path for the clinic note — see notes/ClinicNoteGenerator.kt.
+    // Guardrailed and off by default (modelPath = null); never the source of a
+    // measured number, only an optional rewrite of the deterministic template.
+    implementation("com.google.mediapipe:tasks-genai:0.10.24")
+
     testImplementation("junit:junit:4.13.2")
     // Unit tests (plain JVM, no Robolectric) hit the Android SDK stub jar's
     // org.json, which throws "not mocked" at runtime. This pulls in the real

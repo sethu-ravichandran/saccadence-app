@@ -48,6 +48,8 @@ import com.arra.saccadence.calibration.MarkerSample
 import com.arra.saccadence.calibration.PreviewStats
 import com.arra.saccadence.calibration.PreviewStatsTracker
 import com.arra.saccadence.landmark.EyeLandmarkTracker
+import com.arra.saccadence.landmark.FaceFramingQuality
+import com.arra.saccadence.landmark.eyeWidthOf
 import com.arra.saccadence.marker.ImageProxyFrameSampler
 import com.arra.saccadence.marker.MarkerDecoder
 import com.arra.saccadence.trial.StimulusMirror
@@ -64,7 +66,15 @@ import com.arra.saccadence.ui.components.RecordingChip
 import com.arra.saccadence.ui.components.StatCard
 import com.arra.saccadence.ui.components.StimulusInstruction
 import com.arra.saccadence.ui.components.darkStatCardColors
+import androidx.camera.core.Camera
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Text
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
+import com.arra.saccadence.ui.theme.Radius
 import com.arra.saccadence.ui.theme.SaccadenceColors
+import com.arra.saccadence.ui.theme.SaccadenceType
 import com.arra.saccadence.ui.theme.Sizes
 import com.arra.saccadence.ui.theme.Spacing
 import java.util.concurrent.Executors
@@ -366,6 +376,18 @@ internal fun EyeCaptureArea(controller: TrialSessionController, phase: TrialPhas
     var readyLock by remember { mutableStateOf(CalibrationState()) }
     var previewStats by remember { mutableStateOf(PreviewStats()) }
     var readySent by remember { mutableStateOf(false) }
+    // Live face-framing feedback during the actual eye-tracking blocks — a
+    // too-far/too-small face silently produces unreliable angle math
+    // downstream (see FaceFramingQuality's doc), so the operator needs to see
+    // this during capture, not discover it after the trial completes.
+    var eyeWidth by remember { mutableStateOf<Float?>(null) }
+    // No wider-than-1x option was found on this hardware's back camera during
+    // on-device testing, so this exists for fine control near the default,
+    // not to reach an ultra-wide FOV that may not be there.
+    var camera by remember { mutableStateOf<Camera?>(null) }
+    var zoomRatio by remember { mutableStateOf(1f) }
+    var minZoomRatio by remember { mutableStateOf(1f) }
+    var maxZoomRatio by remember { mutableStateOf(1f) }
     DisposableEffect(Unit) {
         onDispose {
             executor.shutdown()
@@ -445,7 +467,14 @@ internal fun EyeCaptureArea(controller: TrialSessionController, phase: TrialPhas
                                     }
                                     is TrialPhase.Fixation, is TrialPhase.Saccade, is TrialPhase.Pursuit -> {
                                         landmarkTracker.analyze(image, phoneTimeMs.toLong())
-                                        landmarkTracker.latestFrame(phoneTimeMs)?.let { controller.onLandmarkFrame(it) }
+                                        val latest = landmarkTracker.latestFrame(phoneTimeMs)
+                                        if (latest != null) controller.onLandmarkFrame(latest)
+                                        // Assigned unconditionally, including null: only updating on
+                                        // a hit would leave the last good reading frozen once the
+                                        // face is lost — confirmed as a real bug during on-device
+                                        // testing (banner stuck GOOD pointed at a wall).
+                                        val width = latest?.let { eyeWidthOf(it) }
+                                        mainExecutor.execute { eyeWidth = width }
                                         image.close()
                                     }
                                     else -> image.close()
@@ -454,9 +483,15 @@ internal fun EyeCaptureArea(controller: TrialSessionController, phase: TrialPhas
                         }
 
                     cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
+                    val boundCamera = cameraProvider.bindToLifecycle(
                         lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageAnalysis
                     )
+                    camera = boundCamera
+                    boundCamera.cameraInfo.zoomState.value?.let { zoomState ->
+                        minZoomRatio = zoomState.minZoomRatio
+                        maxZoomRatio = zoomState.maxZoomRatio
+                        zoomRatio = zoomState.zoomRatio
+                    }
                 }, mainExecutor)
 
                 previewView
@@ -474,6 +509,16 @@ internal fun EyeCaptureArea(controller: TrialSessionController, phase: TrialPhas
             RecordingChip(
                 label = "REC",
                 modifier = Modifier.align(Alignment.TopStart).padding(Spacing.md),
+            )
+            ZoomControl(
+                zoomRatio = zoomRatio,
+                onZoomChange = { next ->
+                    camera?.cameraControl?.setZoomRatio(next)
+                    zoomRatio = next
+                },
+                minZoomRatio = minZoomRatio,
+                maxZoomRatio = maxZoomRatio,
+                modifier = Modifier.align(Alignment.TopEnd).padding(Spacing.md),
             )
         }
 
@@ -516,8 +561,8 @@ internal fun EyeCaptureArea(controller: TrialSessionController, phase: TrialPhas
                     )
                 }
                 CaptureQualityLine(
-                    quality = if (isEyeTrackingPhase) CaptureQuality.Good else CaptureQuality.Idle,
-                    label = qualityText(phase),
+                    quality = if (isEyeTrackingPhase) captureQualityFor(eyeWidth) else CaptureQuality.Idle,
+                    label = if (isEyeTrackingPhase) framingLabel(eyeWidth) else qualityText(phase),
                 )
             }
         }
@@ -590,12 +635,68 @@ private fun qualityText(phase: TrialPhase): String = when (phase) {
     else -> "Idle"
 }
 
+private fun captureQualityFor(eyeWidth: Float?): CaptureQuality = when (FaceFramingQuality.from(eyeWidth)) {
+    FaceFramingQuality.GOOD -> CaptureQuality.Good
+    FaceFramingQuality.AVERAGE, FaceFramingQuality.BAD -> CaptureQuality.Degraded
+}
+
+private fun framingLabel(eyeWidth: Float?): String = when (FaceFramingQuality.from(eyeWidth)) {
+    FaceFramingQuality.GOOD -> "Tracking eyes… good framing."
+    FaceFramingQuality.AVERAGE -> "Tracking eyes — move the phone closer to the patient's face."
+    FaceFramingQuality.BAD -> if (eyeWidth == null) {
+        "No face detected — point the camera at the patient's eyes."
+    } else {
+        "Too far — move the phone much closer to the patient's face."
+    }
+}
+
 /**
  * Two ovals, one per eye. The handoff draws a single wide oval covering both,
  * but the two-oval guide is what this app's operators aim with, so only the
  * stroke and colour move onto the palette: 1.5 px in the dark guide accent at
  * 85 %, the same treatment as the QR reticle's brackets.
  */
+/**
+ * Icon-only, minimal footprint — two glyphs on the same chip scrim/radius
+ * [VideoChip] uses, not a labeled button, since this sits over the live
+ * preview and shouldn't compete with the framing guides for attention.
+ */
+@Composable
+private fun ZoomControl(
+    zoomRatio: Float,
+    onZoomChange: (Float) -> Unit,
+    minZoomRatio: Float,
+    maxZoomRatio: Float,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .clip(Radius.chip)
+            .background(SaccadenceColors.DarkChipScrim.copy(alpha = 0.72f)),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ZoomGlyphButton("−") { onZoomChange((zoomRatio - 0.2f).coerceAtLeast(minZoomRatio)) }
+        ZoomGlyphButton("+") { onZoomChange((zoomRatio + 0.2f).coerceAtMost(maxZoomRatio)) }
+    }
+}
+
+@Composable
+private fun ZoomGlyphButton(glyph: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(Sizes.recordingDot * 6)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = glyph,
+            style = SaccadenceType.MonoVideoChip,
+            color = SaccadenceColors.DarkChipText,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
 @Composable
 private fun EyeAlignmentGuides(modifier: Modifier = Modifier) {
     Canvas(modifier = modifier) {

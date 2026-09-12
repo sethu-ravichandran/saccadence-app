@@ -107,7 +107,10 @@ class ClinicNoteGeneratorTest {
 
     @Test
     fun `Gemma generator with no model path returns the deterministic note untouched`() {
-        val generator = GemmaClinicNoteGenerator(modelPath = null)
+        val generator = GemmaClinicNoteGenerator(
+            modelPath = null,
+            createInference = { error("must not be called when modelPath is null") },
+        )
         val note = generator.generate(input())
         assertEquals("deterministic", note.source)
         assertFalse(note.isDraft)
@@ -116,8 +119,14 @@ class ClinicNoteGeneratorTest {
 
     @Test
     fun `Gemma generator falls back to deterministic when the model call throws`() {
-        // No model bundled in this build, so any configured path still fails closed.
-        val generator = GemmaClinicNoteGenerator(modelPath = "/data/local/tmp/gemma.task")
+        // Simulates a real device where model load or inference fails (bad
+        // path, corrupt asset, OOM, etc.) — generate()'s runCatching is what's
+        // actually under test: it must fail closed to the deterministic note
+        // rather than propagate the failure or return garbage.
+        val generator = GemmaClinicNoteGenerator(
+            modelPath = "/data/local/tmp/gemma.task",
+            createInference = { throw IllegalStateException("simulated model load failure") },
+        )
         val note = generator.generate(input())
         assertEquals("deterministic", note.source)
     }
