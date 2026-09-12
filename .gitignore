@@ -1,0 +1,28 @@
+*.iml
+.gradle/
+.kotlin/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+
+# Android Studio
+*.hprof
+
+# Gradle
+.gradle
+/app/build/
+
+# APK / signing
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# MediaPipe model files are large binaries — track via release notes, not git,
+# unless you decide otherwise once face_landmarker.task is in hand
+*.task
