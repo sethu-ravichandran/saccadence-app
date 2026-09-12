@@ -3,10 +3,13 @@ package com.arra.saccadence
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -24,6 +27,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import java.util.concurrent.Executors
+import kotlin.math.roundToInt
 
 /**
  * Nothing but a raw back-camera preview. No marker decode, no MediaPipe,
@@ -65,9 +70,46 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private const val TAG = "SaccadenceAnalyzer"
+
+/**
+ * Logs actual resolution + measured fps off the ImageAnalysis stream itself —
+ * this is what the sensor is really delivering through the standard
+ * (non-high-speed) session, not the 120/240fps high-speed-session numbers
+ * confirmed separately via CameraCharacteristics. Those two numbers can
+ * legitimately differ; this stub tells us which one a plain analyzer gets.
+ */
+private class FrameRateLogger : ImageAnalysis.Analyzer {
+    private var windowStartNs = 0L
+    private var framesInWindow = 0
+    private var loggedResolution = false
+
+    override fun analyze(image: ImageProxy) {
+        if (!loggedResolution) {
+            Log.i(TAG, "ImageAnalysis resolution: ${image.width}x${image.height}, format=${image.format}")
+            loggedResolution = true
+        }
+
+        val now = System.nanoTime()
+        if (windowStartNs == 0L) {
+            windowStartNs = now
+        }
+        framesInWindow++
+
+        val elapsedNs = now - windowStartNs
+        if (elapsedNs >= 1_000_000_000L) {
+            val measuredFps = framesInWindow / (elapsedNs / 1_000_000_000.0)
+            Log.i(TAG, "Measured fps over last window: ${(measuredFps * 10).roundToInt() / 10.0}")
+            windowStartNs = now
+            framesInWindow = 0
+        }
+
+        image.close()
+    }
+}
+
 @Composable
 fun CameraPreview() {
-    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     AndroidView(
@@ -75,6 +117,7 @@ fun CameraPreview() {
         factory = { ctx ->
             val previewView = PreviewView(ctx)
             val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+            val analysisExecutor = Executors.newSingleThreadExecutor()
 
             cameraProviderFuture.addListener({
                 val cameraProvider = cameraProviderFuture.get()
@@ -83,13 +126,21 @@ fun CameraPreview() {
                     it.surfaceProvider = previewView.surfaceProvider
                 }
 
+                val imageAnalysis = ImageAnalysis.Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build()
+                    .also {
+                        it.setAnalyzer(analysisExecutor, FrameRateLogger())
+                    }
+
                 // Back camera, per the fps investigation — front caps at 30fps,
-                // back exposes real high-speed modes (1080p up to 240fps).
+                // back exposes real high-speed modes (1080p up to 240fps) in a
+                // constrained high-speed session, which this stub is NOT using.
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
-                    lifecycleOwner, cameraSelector, preview
+                    lifecycleOwner, cameraSelector, preview, imageAnalysis
                 )
             }, ContextCompat.getMainExecutor(ctx))
 
