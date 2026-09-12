@@ -27,6 +27,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.arra.saccadence.marker.ImageProxyFrameSampler
+import com.arra.saccadence.marker.MarkerDecoder
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
@@ -83,6 +85,9 @@ private class FrameRateLogger : ImageAnalysis.Analyzer {
     private var windowStartNs = 0L
     private var framesInWindow = 0
     private var loggedResolution = false
+    private var lastLoggedFrameId: Int? = null
+
+    private val markerDecoder = MarkerDecoder()
 
     override fun analyze(image: ImageProxy) {
         if (!loggedResolution) {
@@ -102,6 +107,17 @@ private class FrameRateLogger : ImageAnalysis.Analyzer {
             Log.i(TAG, "Measured fps over last window: ${(measuredFps * 10).roundToInt() / 10.0}")
             windowStartNs = now
             framesInWindow = 0
+        }
+
+        val result = markerDecoder.decode(ImageProxyFrameSampler(image))
+        if (result != null && result.frameId != lastLoggedFrameId) {
+            lastLoggedFrameId = result.frameId
+            Log.i(
+                TAG,
+                "Marker: active=${result.active} frameId=${result.frameId} " +
+                    "guardBox=${result.guardBox.left},${result.guardBox.top}," +
+                    "${result.guardBox.right},${result.guardBox.bottom}"
+            )
         }
 
         image.close()

@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:2:1-23:12
-INJECTED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:2:1-23:12
-INJECTED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:2:1-23:12
-INJECTED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:2:1-23:12
+ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:2:1-24:12
+INJECTED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:2:1-24:12
+INJECTED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:2:1-24:12
+INJECTED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:2:1-24:12
 MERGED from [androidx.camera:camera-video:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/8389905ca4e4c67fffe9b9ab386077f6/transformed/camera-video-1.4.0/AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.camera:camera-view:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/93f41e1daf4d45cd52c207c6bed7d166/transformed/camera-view-1.4.0/AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.camera:camera-lifecycle:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/c0c1e91f2ddd8a64714a8732b564041f/transformed/camera-lifecycle-1.4.0/AndroidManifest.xml:2:1-7:12
@@ -85,8 +85,8 @@ ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/Androi
 	android:name
 		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:5:19-61
 application
-ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:7:5-22:19
-INJECTED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:7:5-22:19
+ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:7:5-23:19
+INJECTED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:7:5-23:19
 MERGED from [androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:23:5-34:19
 MERGED from [androidx.camera:camera-camera2:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/f386c18b54faf6e7ce75f6531b084887/transformed/camera-camera2-1.4.0/AndroidManifest.xml:23:5-34:19
 MERGED from [androidx.camera:camera-core:1.4.0] /Users/sethu/.gradle/caches/9.0.0/transforms/18d95f9de23cf121e96e6584ac707ecd/transformed/camera-core-1.4.0/AndroidManifest.xml:23:5-34:19
@@ -109,30 +109,32 @@ MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/seth
 		ADDED from [androidx.core:core:1.13.1] /Users/sethu/.gradle/caches/9.0.0/transforms/b12bc37f3c78bd3e35ab75634da05b99/transformed/core-1.13.1/AndroidManifest.xml:28:18-86
 	android:label
 		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:9:9-35
+	android:roundIcon
+		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:12:9-54
 	android:icon
-		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:11:9-56
+		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:11:9-43
 	android:allowBackup
 		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:8:9-35
 	android:theme
 		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:10:9-72
 activity#com.arra.saccadence.MainActivity
-ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:13:9-21:20
+ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:14:9-22:20
 	android:screenOrientation
-		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:16:13-49
+		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:17:13-49
 	android:exported
-		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:15:13-36
+		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:16:13-36
 	android:name
-		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:14:13-41
+		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:15:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:17:13-20:29
+ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:18:13-21:29
 action#android.intent.action.MAIN
-ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:18:17-69
+ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:19:17-69
 	android:name
-		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:18:25-66
+		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:19:25-66
 category#android.intent.category.LAUNCHER
-ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:19:17-77
+ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:20:17-77
 	android:name
-		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:19:27-74
+		ADDED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml:20:27-74
 uses-sdk
 INJECTED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from /Users/sethu/Desktop/iqoo-reskilll/saccadence-app/app/src/main/AndroidManifest.xml
