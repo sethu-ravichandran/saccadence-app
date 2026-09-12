@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.arra.saccadence.app-mergeDebugResources-51:/values-sw/values-sw.xml",
+            "outputFile": "com.arra.saccadence.app-mergeDebugResources-57:/values-sw/values-sw.xml",
             "map": [
                 {
                     "source": "/Users/sethu/.gradle/caches/9.0.0/transforms/582f971bb5c0eda74486e80166ea9f03/transformed/foundation-release/res/values-sw/values-sw.xml",

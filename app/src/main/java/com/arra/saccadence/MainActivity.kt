@@ -21,12 +21,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.arra.saccadence.intake.IntakeNavHost
+import com.arra.saccadence.intake.PatientRepository
+import com.arra.saccadence.intake.PatientSession
 import com.arra.saccadence.marker.ImageProxyFrameSampler
 import com.arra.saccadence.marker.MarkerDecoder
 import java.util.concurrent.Executors
@@ -58,12 +62,25 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    val granted by cameraGranted
-                    if (granted) {
-                        CameraPreview()
+                    val context = LocalContext.current
+                    val session = remember { PatientSession() }
+                    val repository = remember { PatientRepository(context) }
+                    var reachedCalibration by remember { mutableStateOf(false) }
+
+                    if (!reachedCalibration) {
+                        IntakeNavHost(
+                            session = session,
+                            repository = repository,
+                            onReachCalibration = { reachedCalibration = true },
+                        )
                     } else {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            Text("Camera permission required")
+                        val granted by cameraGranted
+                        if (granted) {
+                            CameraPreview()
+                        } else {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                Text("Camera permission required")
+                            }
                         }
                     }
                 }

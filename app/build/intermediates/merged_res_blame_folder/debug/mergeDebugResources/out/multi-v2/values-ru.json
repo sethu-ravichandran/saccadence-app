@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.arra.saccadence.app-mergeDebugResources-51:/values-ru/values-ru.xml",
+            "outputFile": "com.arra.saccadence.app-mergeDebugResources-57:/values-ru/values-ru.xml",
             "map": [
                 {
                     "source": "/Users/sethu/.gradle/caches/9.0.0/transforms/4df35169399c805144e2f004f480d127/transformed/material3-release/res/values-ru/values-ru.xml",

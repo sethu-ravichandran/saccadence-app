@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.arra.saccadence.app-mergeDebugResources-51:/values-zh-rHK/values-zh-rHK.xml",
+            "outputFile": "com.arra.saccadence.app-mergeDebugResources-57:/values-zh-rHK/values-zh-rHK.xml",
             "map": [
                 {
                     "source": "/Users/sethu/.gradle/caches/9.0.0/transforms/4df35169399c805144e2f004f480d127/transformed/material3-release/res/values-zh-rHK/values-zh-rHK.xml",
