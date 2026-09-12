@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,10 +21,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.arra.saccadence.test.EyeCaptureArea
 import com.arra.saccadence.test.RigStimulusMirror
+import com.arra.saccadence.ui.components.DarkWarningStrip
+import com.arra.saccadence.ui.components.VideoChip
+import com.arra.saccadence.ui.theme.SaccadenceColors
+import com.arra.saccadence.ui.theme.Spacing
+import com.arra.saccadence.trial.StimulusMirror
 import com.arra.saccadence.trial.TrialPhase
 import com.arra.saccadence.trial.TrialSessionController
 
@@ -69,6 +71,7 @@ fun TrialStepperScreen(
     repository: PatientRepository,
     controller: TrialSessionController,
     phase: TrialPhase,
+    stimulus: StimulusMirror = StimulusMirror.Idle,
     formStep: FormStep?,
     onFormStepChange: (FormStep?) -> Unit,
     connectionWarning: String? = null,
@@ -88,19 +91,14 @@ fun TrialStepperScreen(
         return
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().background(SaccadenceColors.DarkScreen)) {
         if (connectionWarning != null) {
-            Text(
-                text = connectionWarning,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.errorContainer)
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-            )
+            // Sits directly above the dark rig panel, so it takes the dark
+            // warning treatment rather than Material's error container — a
+            // light strip here would cut the two dark panes in half.
+            DarkWarningStrip(text = connectionWarning)
         }
-        RigStimulusMirror(phase = phase, modifier = Modifier.fillMaxWidth().weight(1f))
+        RigStimulusMirror(phase = phase, stimulus = stimulus, modifier = Modifier.fillMaxWidth().weight(1f))
 
         Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             AnimatedContent(
@@ -124,6 +122,7 @@ fun TrialStepperScreen(
                     )
                     FormStep.DOCTOR -> DoctorScreen(
                         session = session,
+                        repository = repository,
                         onBack = { onFormStepChange(FormStep.DETAILS) },
                         onNext = { onFormStepChange(FormStep.SYMPTOMS) },
                     )
@@ -150,15 +149,14 @@ fun TrialStepperScreen(
                     null -> {
                         EyeCaptureArea(controller = controller, phase = phase, modifier = Modifier.fillMaxSize())
                         val (stepNumber, label) = phaseStepNumberAndLabel(phase)
-                        Text(
-                            text = "Step $stepNumber of $TOTAL_STEPS — $label",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = Color.White,
+                        // A scrim chip, not a bare label: it floats over the live
+                        // camera feed, where flat text on any single colour would
+                        // lose contrast as the scene changes.
+                        VideoChip(
+                            label = "STEP $stepNumber OF $TOTAL_STEPS — ${label.uppercase()}",
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
-                                .padding(top = 12.dp)
-                                .background(Color(0x99000000), RoundedCornerShape(6.dp))
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                                .padding(top = Spacing.md),
                         )
                     }
                 }

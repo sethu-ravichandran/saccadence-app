@@ -8,8 +8,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,9 +28,12 @@ import com.arra.saccadence.notes.NoteInput
 import com.arra.saccadence.pairing.PairingScreen
 import com.arra.saccadence.test.ResultsScreen
 import com.arra.saccadence.trial.Repeatability
+import com.arra.saccadence.trial.StimulusMirror
 import com.arra.saccadence.trial.TrialPhase
 import com.arra.saccadence.trial.TrialRepository
 import com.arra.saccadence.trial.TrialSessionController
+import com.arra.saccadence.ui.theme.SaccadenceColors
+import com.arra.saccadence.ui.theme.SaccadenceTheme
 import com.arra.saccadence.voice.SpokenInstructions
 
 private enum class Screen { SPLASH, PAIRING, STEPPER, RESULTS }
@@ -55,8 +58,13 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            MaterialTheme {
-                Surface(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
+            SaccadenceTheme {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(SaccadenceColors.Surface)
+                        .safeDrawingPadding(),
+                ) {
                     val context = LocalContext.current
                     val session = remember { PatientSession() }
                     val repository = remember { PatientRepository(context) }
@@ -68,6 +76,9 @@ class MainActivity : ComponentActivity() {
                     var pairingStatusText by remember { mutableStateOf("") }
                     var connectionWarning by remember { mutableStateOf<String?>(null) }
                     var voice by remember { mutableStateOf<SpokenInstructions?>(null) }
+                    // Presentation-only mirror of the rig's target, for the stimulus
+                    // panel — see StimulusMirror; nothing measured depends on it.
+                    var stimulus by remember { mutableStateOf<StimulusMirror>(StimulusMirror.Idle) }
                     var controller by remember { mutableStateOf<TrialSessionController?>(null) }
                     // Hoisted above the stepper (not local to it) so it survives the
                     // Stepper<->Results round trip on "run another" without forcing the
@@ -101,6 +112,7 @@ class MainActivity : ComponentActivity() {
                                         pairingStatusText = statusTextFor(newPhase)
                                     },
                                     onConnectionWarning = { warning -> connectionWarning = warning },
+                                    onStimulus = { mirrored -> stimulus = mirrored },
                                 )
                                 controller = newController
                                 connectionWarning = null
@@ -122,6 +134,7 @@ class MainActivity : ComponentActivity() {
                                     repository = repository,
                                     controller = activeController,
                                     phase = phase,
+                                    stimulus = stimulus,
                                     formStep = formStep,
                                     onFormStepChange = { formStep = it },
                                     connectionWarning = connectionWarning,

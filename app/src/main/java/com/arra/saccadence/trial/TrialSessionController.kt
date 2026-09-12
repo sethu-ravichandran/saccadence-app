@@ -1,6 +1,7 @@
 package com.arra.saccadence.trial
 
 import com.arra.saccadence.calibration.CalibrationResult
+import com.arra.saccadence.calibration.CalibrationStatus
 import com.arra.saccadence.calibration.ClockCalibrator
 import com.arra.saccadence.calibration.MarkerSample
 import com.arra.saccadence.landmark.EyeGeometryConverter
@@ -42,6 +43,9 @@ class TrialSessionController(
     /** Fires once reconnect attempts to the rig start piling up, with a message the
      *  UI can show instead of silently retrying forever; fires with null once connected. */
     private val onConnectionWarning: (String?) -> Unit = {},
+    /** Fires whenever the rig moves its target, so the UI can mirror it. Presentation
+     *  only — see [StimulusMirror]; the measurement path buffers these events itself. */
+    private val onStimulus: (StimulusMirror) -> Unit = {},
 ) {
     private val lock = Any()
 
@@ -196,20 +200,73 @@ class TrialSessionController(
             }
             is RigEvent.BlockStart -> {
                 phase = when (event.block) {
-                    "fixation" -> { baselineSet = false; TrialPhase.Fixation.also { voice.speak(SpokenInstructions.Phrase.FIXATION_START) } }
+                    "fixation" -> {
+                        baselineSet = false
+                        // The rig holds a steady centre dot through fixation, so the
+                        // mirror shows one too. Emitting Idle here was a bug: it left
+                        // the operator's panel blank for the whole block while the
+                        // patient was, in fact, looking at a target.
+                        onStimulus(StimulusMirror.FixationTarget)
+                        TrialPhase.Fixation.also { voice.speak(SpokenInstructions.Phrase.FIXATION_START) }
+                    }
                     "saccade" -> TrialPhase.Saccade.also { voice.speak(SpokenInstructions.Phrase.SACCADE_START) }
                     "pursuit" -> TrialPhase.Pursuit.also { voice.speak(SpokenInstructions.Phrase.PURSUIT_START) }
                     else -> phase
                 }
             }
             is RigEvent.TrialConfig -> trialConfig = event
-            is RigEvent.TargetStep -> synchronized(lock) { targetSteps.add(event) }
-            is RigEvent.SweepStart -> synchronized(lock) { pendingSweepStarts[event.passIndex] = event }
+            is RigEvent.TargetStep -> {
+                val previous = synchronized(lock) {
+                    val last = targetSteps.lastOrNull()
+                    targetSteps.add(event)
+                    last
+                }
+                onStimulus(
+                    StimulusMirror.SaccadeTarget(
+                        targetXFraction = event.xFraction(),
+                        previousXFraction = previous?.xFraction(),
+                        stepAmplitudeDeg = event.stepAmplitudeDeg,
+                    )
+                )
+            }
+            is RigEvent.SweepStart -> {
+                synchronized(lock) { pendingSweepStarts[event.passIndex] = event }
+                onStimulus(
+                    StimulusMirror.PursuitSweep(
+                        amplitudeDeg = event.amplitudeDeg,
+                        velocityDegPerSec = event.commandedVelocityDegPerSec,
+                        direction = event.direction,
+                        startPhoneTimeMs = event.laptopTimeMs.toPhoneClock(),
+                    )
+                )
+            }
             is RigEvent.SweepEnd -> synchronized(lock) {
                 pendingSweepStarts.remove(event.passIndex)?.let { start -> sweeps.add(start to event) }
             }
             else -> {}
         }
+    }
+
+    /**
+     * Converts a rig timestamp to the phone's own clock using the offset the
+     * opening calibration measured, or returns null if no trustworthy offset
+     * exists yet.
+     *
+     * Read-only and presentation-only: this exists so the stimulus mirror can
+     * draw the target where it is *now* rather than where it was when the
+     * message was sent. It reads [preCalibrationResult] and never writes it, so
+     * it cannot affect anything measured — which is the property that has to
+     * hold if the mirror is ever allowed to consult calibration at all.
+     *
+     * The clock here is `System.nanoTime() / 1e6`, matching the phone timebase
+     * that [MarkerSample.phoneTimeMs] is stamped with and that the offset was
+     * therefore computed against. Mixing in `System.currentTimeMillis()` would
+     * silently add whatever wall-clock skew the device has accumulated.
+     */
+    private fun Double.toPhoneClock(): Double? {
+        val calibration = preCalibrationResult ?: return null
+        if (calibration.status != CalibrationStatus.OK) return null
+        return this + calibration.offsetMs
     }
 
     private fun completeTrial(postResult: CalibrationResult?, postStartLaptopTimeMs: Double?) {
@@ -243,6 +300,7 @@ class TrialSessionController(
 
         trialRepository.save(result)
         voice.speak(SpokenInstructions.Phrase.TRIAL_COMPLETE)
+        onStimulus(StimulusMirror.Idle)
         phase = TrialPhase.Complete(result)
     }
 
@@ -261,6 +319,7 @@ class TrialSessionController(
         baselineSet = false
         postCalStartEvent = null
         preCalibrationResult = null
+        onStimulus(StimulusMirror.Idle)
     }
 
     private data class TrialSnapshot(

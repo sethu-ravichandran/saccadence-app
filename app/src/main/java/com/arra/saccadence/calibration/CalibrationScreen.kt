@@ -5,8 +5,13 @@ import kotlin.math.sqrt
 /** How many recent guard positions we judge lock stability from. */
 private const val WINDOW_SIZE = 8
 
-/** Max-minus-min spread, in pixels, allowed within the window to call it locked. */
-private const val LOCK_JITTER_THRESHOLD_PX = 6f
+/**
+ * Max-minus-min spread, in pixels, allowed within the window to call it locked.
+ * `internal` rather than private so the preview's JITTER stat card can colour
+ * itself against the same threshold that decides lock — a jitter number shown
+ * as fine while lock is refused would be the UI contradicting the pipeline.
+ */
+internal const val LOCK_JITTER_THRESHOLD_PX = 6f
 
 /** If nothing's been seen this recently, we've lost the marker, not just jittering. */
 private const val STALE_AFTER_MS = 1500L

@@ -1,27 +1,19 @@
 package com.arra.saccadence.intake
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.arra.saccadence.ui.components.StepBar
 
-/** "Step X of Y" header shown above every form step. Back is always allowed and never clears state. */
+/**
+ * "Step X of Y" header shown above every form step. Back is always allowed and
+ * never clears state.
+ *
+ * The design system's [StepBar] carries the whole treatment — the mono
+ * "STEP n OF 7" eyebrow, the step name on the right, and the 4 px accent
+ * track. This stays as a named wrapper so the intake screens keep reading in
+ * their own vocabulary, and so the step total lives in exactly one place.
+ */
 @Composable
-fun StepProgress(step: Int, total: Int = 7, label: String) {
-    Text(
-        text = "Step $step of $total — $label",
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(bottom = 4.dp),
-    )
-    LinearProgressIndicator(
-        progress = { step / total.toFloat() },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 16.dp),
-    )
+fun StepProgress(step: Int, total: Int = 7, label: String, modifier: Modifier = Modifier) {
+    StepBar(step = step, total = total, label = label, modifier = modifier)
 }

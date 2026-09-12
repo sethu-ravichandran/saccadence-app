@@ -7,8 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -18,6 +17,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.arra.saccadence.ui.theme.SaccadenceColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -37,16 +37,17 @@ fun SplashScreen(onFinished: () -> Unit) {
         onFinished()
     }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Image(
-                painter = painterResource(id = R.drawable.brand_icon),
-                contentDescription = "Saccadence",
-                modifier = Modifier
-                    .size(160.dp)
-                    .alpha(alpha.value)
-                    .scale(scale.value),
-            )
-        }
+    Box(
+        modifier = Modifier.fillMaxSize().background(SaccadenceColors.Surface),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.brand_icon),
+            contentDescription = "Saccadence",
+            modifier = Modifier
+                .size(160.dp)
+                .alpha(alpha.value)
+                .scale(scale.value),
+        )
     }
 }

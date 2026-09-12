@@ -1,27 +1,31 @@
 package com.arra.saccadence.intake
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.arra.saccadence.ui.components.CheckRow
+import com.arra.saccadence.ui.components.Hairline
+import com.arra.saccadence.ui.components.NotesField
+import com.arra.saccadence.ui.components.PrimaryButton
+import com.arra.saccadence.ui.components.ScreenScaffold
+import com.arra.saccadence.ui.components.SecondaryButton
+import com.arra.saccadence.ui.theme.SaccadenceType
+import com.arra.saccadence.ui.theme.Sizes
+import com.arra.saccadence.ui.theme.Spacing
 
 /**
  * The answer to "an abnormal number has a dozen possible causes": predefined,
  * identical toggles for every patient, so a reading is recorded under known
  * conditions and stays comparable across that patient's future visits.
+ *
+ * The handoff heads this screen with an H1 ("Anything affecting the eyes
+ * today?") and a sub-line. That is new copy rather than a re-skin of existing
+ * copy, so it is not added here — the screen keeps opening straight into the
+ * step bar and the checklist, as it does today.
  */
 @Composable
 fun SymptomsScreen(
@@ -30,49 +34,51 @@ fun SymptomsScreen(
     onBack: () -> Unit,
     onNext: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        StepProgress(step = 3, total = 7, label = "Symptom / context")
-
-        SymptomFlag.entries.forEach { flag ->
-            val checked = session.symptoms[flag] == true
+    ScreenScaffold(
+        bodyArrangement = Arrangement.spacedBy(Spacing.xl),
+        footer = {
             Row(
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { session.symptoms[flag] = !checked },
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Sizes.footerGap),
             ) {
-                Checkbox(
+                SecondaryButton(
+                    label = "Back",
+                    onClick = onBack,
+                    modifier = Modifier.width(Sizes.backButtonWidthNarrow),
+                )
+                PrimaryButton(
+                    label = "Continue to consent",
+                    onClick = onNext,
+                    labelStyle = SaccadenceType.ButtonPrimary.copy(
+                        fontSize = SaccadenceType.ButtonSecondary.fontSize,
+                    ),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        },
+    ) {
+        StepProgress(step = 3, label = "Symptom / context")
+
+        // A hairline above the first row as well as under each one, so the
+        // checklist reads as one bounded block rather than a run of loose rows.
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Hairline()
+            SymptomFlag.entries.forEach { flag ->
+                val checked = session.symptoms[flag] == true
+                CheckRow(
                     checked = checked,
+                    title = flag.question,
                     onCheckedChange = { session.symptoms[flag] = it },
                 )
-                Text(flag.question)
             }
         }
 
-        OutlinedTextField(
+        NotesField(
+            label = "Notes",
+            labelQualifier = "optional",
             value = session.notes,
             onValueChange = { session.notes = it },
-            label = { Text("Notes (optional)") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp),
-            minLines = 3,
+            modifier = Modifier.fillMaxWidth(),
         )
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
-        ) {
-            TextButton(onClick = onBack) { Text("Back") }
-            Button(onClick = onNext) { Text("Continue to consent") }
-        }
     }
 }

@@ -30,6 +30,15 @@ class PatientRepository(context: Context) {
         writeAll(loadAll().filterNot { it.id == id })
     }
 
+    /**
+     * Wipes every stored record. This is the bulk half of the erasure right the
+     * consent notice promises, so it deletes the file outright rather than
+     * writing an empty array — there should be nothing left on disk to recover.
+     */
+    fun deleteAll() {
+        file.delete()
+    }
+
     fun findByNameAndAge(name: String, age: Int?): PatientRecord? =
         loadAll()
             .filter { age == null || it.age == age }
