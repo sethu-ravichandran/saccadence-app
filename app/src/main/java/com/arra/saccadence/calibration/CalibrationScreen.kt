@@ -66,6 +66,25 @@ internal class GuardTracker {
         )
     }
 
+    /**
+     * A frame the marker did NOT decode on. Clears the window, so [observe]'s
+     * lock means [WINDOW_SIZE] *consecutive* successful decodes rather than
+     * eight successes collected across an arbitrary number of failures.
+     *
+     * The rig's marker free-runs, so a phone aimed half-on can decode
+     * intermittently and still accumulate a full window — which is how "Marker
+     * locked." appeared on screens that then produced fewer than four samples
+     * in the whole 5 s calibration window (INSUFFICIENT_SAMPLES).
+     */
+    fun observeMiss(): CalibrationState {
+        xs.clear(); ys.clear()
+        return CalibrationState(
+            statusText = "Marker not decoding — hold steady on the marker corner.",
+            locked = false,
+            sampleCount = 0,
+        )
+    }
+
     fun staleCheck(nowMs: Long): CalibrationState? {
         if (lastSeenAtMs != 0L && nowMs - lastSeenAtMs > STALE_AFTER_MS) {
             reset()

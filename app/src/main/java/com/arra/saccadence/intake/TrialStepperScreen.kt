@@ -48,7 +48,10 @@ private fun formStepIndex(step: FormStep?): Int = when (step) {
 }
 
 private fun phaseStepNumberAndLabel(phase: TrialPhase): Pair<Int, String> = when (phase) {
-    is TrialPhase.PostCalibration -> 7 to "Post-test calibration"
+    // AwaitingPostCalibration sits AFTER the blocks, so it must not fall through
+    // to the else branch below — that labelled the closing step "Pre-test
+    // calibration" on screen.
+    is TrialPhase.AwaitingPostCalibration, is TrialPhase.PostCalibration -> 7 to "Post-test calibration"
     is TrialPhase.Fixation, is TrialPhase.Saccade, is TrialPhase.Pursuit -> 6 to "Test"
     // Connecting/WaitingForRig/SetupCalibration/Ready/PreCalibration all live under one
     // continuously-mounted camera session — see EyeCaptureArea's own doc comment for why.

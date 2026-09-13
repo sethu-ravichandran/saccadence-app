@@ -64,6 +64,9 @@ sealed interface RigEvent {
         val laptopTimeMs: Double,
     ) : RigEvent
 
+    /** Rig has finished the blocks and is holding for the clinician's confirmation. */
+    data class AwaitingPostCalibration(val trialId: String, val laptopTimeMs: Double) : RigEvent
+
     data class Unknown(val type: String?, val raw: String) : RigEvent
 }
 
@@ -126,6 +129,10 @@ fun parseRigEvent(raw: String): RigEvent {
                 direction = json.getInt("direction"),
                 amplitudeDeg = json.getDouble("amplitudeDeg"),
                 commandedVelocityDegPerSec = json.getDouble("commandedVelocityDegPerSec"),
+                laptopTimeMs = json.getDouble("laptopTimeMs"),
+            )
+            "awaiting_post_calibration" -> RigEvent.AwaitingPostCalibration(
+                trialId = json.getString("trialId"),
                 laptopTimeMs = json.getDouble("laptopTimeMs"),
             )
             "sweep_end" -> RigEvent.SweepEnd(

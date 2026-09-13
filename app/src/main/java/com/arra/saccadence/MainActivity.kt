@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.LaunchedEffect
+import com.arra.saccadence.notes.DeterministicClinicNoteGenerator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,8 +73,15 @@ class MainActivity : ComponentActivity() {
                     val repository = remember { PatientRepository(context) }
                     val trialRepository = remember { TrialRepository.forContext(context) }
                     val noteGenerator = remember {
+                        // Pushed separately (see GemmaClinicNoteGenerator's doc): ~290MB,
+                        // far too large to vendor in the APK. It has to live in the app's
+                        // OWN files dir — /data/local/tmp is not traversable by the app
+                        // UID, so a model staged there reads back as absent. Absent or
+                        // unreadable -> the deterministic note is the whole story, which
+                        // is a correct result, not a degraded one.
+                        val gemmaFile = java.io.File(context.filesDir, "gemma.task")
                         GemmaClinicNoteGenerator(
-                            modelPath = null,
+                            modelPath = gemmaFile.takeIf { it.canRead() }?.absolutePath,
                             createInference = { path ->
                                 com.google.mediapipe.tasks.genai.llminference.LlmInference.createFromOptions(
                                     context,
@@ -160,7 +170,7 @@ class MainActivity : ComponentActivity() {
                             val activeController = controller
                             if (result != null && activeController != null) {
                                 val previous = trialRepository.previousFor(session.id, result)
-                                val note = noteGenerator.generate(
+                                val noteInput = remember(result.trialId) {
                                     NoteInput(
                                         patientName = session.name.ifBlank { "Patient" },
                                         medianLatencyMs = result.medianLatencyMs,
@@ -169,8 +179,29 @@ class MainActivity : ComponentActivity() {
                                         previousMeanPursuitGain = previous?.meanPursuitGain,
                                         qualityStatus = result.qualityStatus,
                                         qualityReasons = result.qualityReasons,
+                                        openingJitterMs = result.errorBudget?.preCalibrationJitterMs,
+                                        closingJitterMs = result.errorBudget?.postCalibrationJitterMs,
+                                        jitterDerivedFromGeometry = result.qualityReasons.contains(
+                                            "calibration_jitter_derived_from_capture_geometry"
+                                        ),
+                                        totalTimingBudgetMs = result.errorBudget?.totalTimingBudgetMs,
                                     )
-                                )
+                                }
+                                // The deterministic note renders immediately; Gemma's
+                                // rewrite replaces it only once it comes back, off the
+                                // main thread. Model load and inference both take
+                                // seconds, so doing this inline would ANR the results
+                                // screen at the worst possible moment.
+                                val deterministicNote = remember(result.trialId) {
+                                    DeterministicClinicNoteGenerator().generate(noteInput)
+                                }
+                                var note by remember(result.trialId) { mutableStateOf(deterministicNote) }
+                                LaunchedEffect(result.trialId) {
+                                    val rewritten = withContext(Dispatchers.IO) {
+                                        runCatching { noteGenerator.generate(noteInput) }.getOrNull()
+                                    }
+                                    if (rewritten != null) note = rewritten
+                                }
                                 ResultsScreen(
                                     result = result,
                                     previous = previous,

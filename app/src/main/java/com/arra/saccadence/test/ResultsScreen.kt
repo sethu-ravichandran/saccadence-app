@@ -65,7 +65,10 @@ fun ResultsScreen(
         },
     ) {
         ScreenTitle(title = "Result")
-        QualityBadge(result.qualityStatus, result.qualityReasons)
+        // Quality status and its raw reason codes are deliberately NOT shown here:
+        // they read as developer output on a clinician-facing screen. They stay in
+        // the stored trial record (trials.json) and in the validity counts below,
+        // which carry the same information in a form a clinician can act on.
 
         Hairline()
 
@@ -84,7 +87,14 @@ fun ResultsScreen(
             label = "SMOOTH-PURSUIT GAIN",
             value = result.meanPursuitGain?.let { "%.2f".format(it) } ?: "—",
             unit = result.meanPursuitGain?.let { "ratio" },
-            fallbackNote = if (result.meanPursuitGain == null) "no valid sweeps" else null,
+            // A protocol with no pursuit block emits no sweeps at all, so "0/0"
+            // and "no valid sweeps" read as a failed measurement rather than a
+            // test that was never part of this protocol. Say which it was.
+            fallbackNote = when {
+                result.meanPursuitGain != null -> null
+                result.sweeps.isEmpty() -> "not included in this protocol"
+                else -> "no valid sweeps"
+            },
             comparison = comparisonText(result.meanPursuitGain, previous?.meanPursuitGain, unit = "", lowerIsBetter = false),
             improved = isImproved(result.meanPursuitGain, previous?.meanPursuitGain, lowerIsBetter = false),
         )
@@ -102,7 +112,7 @@ fun ResultsScreen(
             )
             AuditLine(
                 label = "Sweeps",
-                value = "${result.validSweeps.size}/${result.sweeps.size}",
+                value = if (result.sweeps.isEmpty()) "n/a" else "${result.validSweeps.size}/${result.sweeps.size}",
                 valueColor = countColor(result.validSweeps.size, result.sweeps.size),
             )
         }

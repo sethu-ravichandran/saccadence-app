@@ -29,6 +29,35 @@ object TrialAssembler {
     /** Trials whose bracket drift exceeds this are flagged, not silently reported as valid. */
     const val DEFAULT_DRIFT_GATE_BOUND_MS = 50.0
 
+    /** Rig display refresh rate. The stimulus can only change on a scan-out boundary. */
+    const val DISPLAY_REFRESH_HZ = 60.0
+
+    /**
+     * Stand-in for a calibration jitter that was never measured, derived from
+     * capture geometry instead of invented.
+     *
+     * An unmeasured edge is NOT a zero-uncertainty edge, but that is exactly
+     * how a 0.0 ms row reads on the results screen — "measured and
+     * negligible" rather than "never measured". Two hard floors survive
+     * whatever the marker did:
+     *
+     *  - the camera cannot locate a transition finer than one frame period
+     *    (33.3 ms at 30 fps), and
+     *  - the stimulus cannot change except on a display refresh
+     *    (16.7 ms at 60 Hz).
+     *
+     * Combined as independent terms: sqrt(33.3^2 + 16.7^2) ~ 37.2 ms. That
+     * lands between the 36.9 ms and 52.7 ms this rig/phone pair actually
+     * produced on its two successful single-edge calibrations, so it is a
+     * realistic lower bound rather than a flattering one. It is still a
+     * derived figure, so any trial using it says so.
+     */
+    fun derivedCalibrationJitterMs(framePeriodMs: Double): Double {
+        val refreshPeriodMs = 1000.0 / DISPLAY_REFRESH_HZ
+        val frameTerm = if (framePeriodMs > 0) framePeriodMs else 0.0
+        return sqrt(frameTerm * frameTerm + refreshPeriodMs * refreshPeriodMs)
+    }
+
     fun assemble(
         patientId: String,
         trialConfig: RigEvent.TrialConfig,
@@ -142,10 +171,24 @@ object TrialAssembler {
         // pin the whole trial's headline figure at an impossible value.
         val residualHeadDriftDeg = percentile(allEyeSamples.map { it.headDriftDeg }, 0.95)
 
+        val framePeriodMs = measuredFps?.takeIf { it > 0 }?.let { 1000.0 / it } ?: 0.0
+        val derivedJitterMs = derivedCalibrationJitterMs(framePeriodMs)
+
+        // A jitter of exactly zero always means "no edge pair to disagree
+        // about", never a perfect measurement, so it is replaced by the
+        // derived floor and disclosed.
+        val measuredPreJitterMs = if (usePre) preCalibration.jitterMs else 0.0
+        val measuredPostJitterMs = if (usePost) postCalibration!!.jitterMs else 0.0
+        val preJitterDerived = measuredPreJitterMs <= 0.0
+        val postJitterDerived = measuredPostJitterMs <= 0.0
+        if (preJitterDerived || postJitterDerived) {
+            reasons += "calibration_jitter_derived_from_capture_geometry"
+        }
+
         val errorBudget = ErrorBudget(
-            framePeriodMs = measuredFps?.takeIf { it > 0 }?.let { 1000.0 / it } ?: 0.0,
-            preCalibrationJitterMs = if (usePre) preCalibration.jitterMs else 0.0,
-            postCalibrationJitterMs = if (usePost) postCalibration!!.jitterMs else 0.0,
+            framePeriodMs = framePeriodMs,
+            preCalibrationJitterMs = if (preJitterDerived) derivedJitterMs else measuredPreJitterMs,
+            postCalibrationJitterMs = if (postJitterDerived) derivedJitterMs else measuredPostJitterMs,
             measuredDriftMs = driftMs,
             rollingShutterResidualMs = ROLLING_SHUTTER_RESIDUAL_PLACEHOLDER_MS,
             landmarkSigmaDeg = landmarkSigmaDeg,

@@ -21,6 +21,15 @@ sealed interface TrialPhase {
     data object Fixation : TrialPhase
     data object Saccade : TrialPhase
     data object Pursuit : TrialPhase
+    /**
+     * Blocks are done, the closing calibration has not been started from the
+     * phone yet. The operator is still holding the phone at the patient's
+     * face here, so this is where they get told to turn it back to the
+     * laptop — previously the app jumped straight into buffering marker
+     * frames while the camera was still pointed at a face, which is the
+     * mechanism behind every `closing_calibration_unavailable` flag so far.
+     */
+    data object AwaitingPostCalibration : TrialPhase
     data object PostCalibration : TrialPhase
     data class Complete(val result: TrialResult) : TrialPhase
 }
@@ -92,6 +101,11 @@ class TrialSessionController(
      */
     private var arrivalOffsetMs: Double? = null
 
+    /** Set by [startPostCalibration]; until then post-role marker frames are not buffered. */
+    private var postCalibrationArmed = false
+    /** A `calibration_stop` role=post that landed before the operator armed the closing calibration. */
+    private var pendingPostStop: RigEvent.CalibrationStop? = null
+
     private var preMarkerBuffer = mutableListOf<MarkerSample>()
     private var postMarkerBuffer = mutableListOf<MarkerSample>()
     private val targetSteps = mutableListOf<RigEvent.TargetStep>()
@@ -149,6 +163,38 @@ class TrialSessionController(
     /** UI calls this once it has consumed a [TrialPhase.Complete] result, so the controller can accept the next trial. */
     fun acknowledgeComplete() {
         if (phase is TrialPhase.Complete) phase = TrialPhase.Ready
+    }
+
+    /** Idempotent: several triggers can legitimately race to park the trial here. */
+    private fun awaitPostCalibration() {
+        if (postCalibrationArmed) return
+        if (phase is TrialPhase.AwaitingPostCalibration) return
+        phase = TrialPhase.AwaitingPostCalibration
+        onStimulus(StimulusMirror.Idle)
+        voice.speak(SpokenInstructions.Phrase.TRIAL_COMPLETE)
+    }
+
+    /**
+     * UI calls this from the "Go to closing calibration" tap once the trial's
+     * blocks are done. Only from here on are post-role marker frames
+     * buffered.
+     *
+     * If the rig has already closed its own 5 s post window by the time this
+     * is tapped, the stop event is waiting in [pendingPostStop] and the trial
+     * is assembled immediately with whatever was captured — flagged rather
+     * than left on a dead screen with no way forward.
+     */
+    fun startPostCalibration() {
+        if (phase !is TrialPhase.AwaitingPostCalibration) return
+        postCalibrationArmed = true
+        val alreadyStopped = pendingPostStop
+        if (alreadyStopped != null) {
+            pendingPostStop = null
+            phase = TrialPhase.PostCalibration
+            finishPostCalibration(alreadyStopped)
+        } else {
+            phase = TrialPhase.PostCalibration
+        }
     }
 
     /** UI calls this from the calibration screen's "Start test" tap, once the marker has locked. See [phoneReadyMessage]. */
@@ -210,11 +256,19 @@ class TrialSessionController(
                 "pre" -> {
                     resetTrialBuffers()
                     preCalStartEvent = event
+                    // Re-armed AFTER the reset on purpose: trial_config arrives
+                    // before this event, so capturing the anchor there alone left
+                    // resetTrialBuffers() to wipe it and the arrival-time fallback
+                    // could never fire.
+                    arrivalOffsetMs = phoneClockMs() - event.laptopTimeMs
                     phase = TrialPhase.PreCalibration
                 }
                 "post" -> {
                     postCalStartEvent = event
-                    phase = TrialPhase.PostCalibration
+                    // Do NOT start buffering yet — the operator decides when,
+                    // via startPostCalibration(). The rig runs its own window
+                    // regardless; that mismatch is what the flag reports.
+                    if (postCalibrationArmed) phase = TrialPhase.PostCalibration
                 }
             }
             is RigEvent.CalibrationStop -> when (event.role) {
@@ -240,19 +294,17 @@ class TrialSessionController(
                     }
                 }
                 "post" -> {
-                    val start = postCalStartEvent
-                    mainHandler.postDelayed({
-                        if (postCalStartEvent !== start) return@postDelayed
-                        val samples = synchronized(lock) { postMarkerBuffer.toList() }
-                        val postResult = if (start != null) {
-                            ClockCalibrator.calibrate("post", start.trialId, samples, start.laptopTimeMs, event.laptopTimeMs)
-                        } else null
-                        android.util.Log.d(
-                            "SaccCal",
-                            "post-cal done: samples=${samples.size} active=${samples.count { it.active }} status=${postResult?.status}"
-                        )
-                        completeTrial(postResult, start?.laptopTimeMs)
-                    }, CALIBRATION_SETTLE_MS)
+                    // Held until the operator arms the closing calibration, so a
+                    // rig window that opened and shut while the phone was still
+                    // on the patient's face doesn't silently end the trial. The
+                    // phase is forced here too: the operator must always have a
+                    // way forward, even if no awaiting event ever arrived.
+                    if (postCalibrationArmed) {
+                        finishPostCalibration(event)
+                    } else {
+                        pendingPostStop = event
+                        awaitPostCalibration()
+                    }
                 }
             }
             is RigEvent.BlockStart -> {
@@ -272,6 +324,18 @@ class TrialSessionController(
                     else -> phase
                 }
             }
+            // The rig tells us explicitly that it is parked waiting for the
+            // closing calibration to be confirmed.
+            is RigEvent.AwaitingPostCalibration -> awaitPostCalibration()
+            // Fallback trigger: a rig running the pre-gate JS never sends
+            // `awaiting_post_calibration`, and keying off that event alone left
+            // the phone with no button, no armed buffer and therefore no
+            // completeTrial() — the trial hung forever with nothing saved.
+            // The last block_end always arrives, on either rig version.
+            is RigEvent.BlockEnd -> {
+                val lastBlock = if (trialConfig?.pursuit != null) "pursuit" else "saccade"
+                if (event.block == lastBlock) awaitPostCalibration()
+            }
             is RigEvent.TrialConfig -> {
                 trialConfig = event
                 // Earliest trial event carrying a laptop timestamp — the cheapest
@@ -281,6 +345,10 @@ class TrialSessionController(
                 }
             }
             is RigEvent.TargetStep -> {
+                // Last line of defence for the anchor, whatever the event order was.
+                if (arrivalOffsetMs == null) {
+                    arrivalOffsetMs = phoneClockMs() - event.laptopTimeMs
+                }
                 val previous = synchronized(lock) {
                     val last = targetSteps.lastOrNull()
                     targetSteps.add(event)
@@ -380,6 +448,22 @@ class TrialSessionController(
         phase = TrialPhase.Complete(result)
     }
 
+    private fun finishPostCalibration(stop: RigEvent.CalibrationStop) {
+        val start = postCalStartEvent
+        mainHandler.postDelayed({
+            if (postCalStartEvent !== start) return@postDelayed
+            val samples = synchronized(lock) { postMarkerBuffer.toList() }
+            val postResult = if (start != null) {
+                ClockCalibrator.calibrate("post", start.trialId, samples, start.laptopTimeMs, stop.laptopTimeMs)
+            } else null
+            android.util.Log.d(
+                "SaccCal",
+                "post-cal done: samples=${samples.size} active=${samples.count { it.active }} status=${postResult?.status}"
+            )
+            completeTrial(postResult, start?.laptopTimeMs)
+        }, CALIBRATION_SETTLE_MS)
+    }
+
     /** Same timebase the camera stamps marker/landmark samples with. */
     private fun phoneClockMs(): Double = System.nanoTime() / 1_000_000.0
 
@@ -400,6 +484,8 @@ class TrialSessionController(
         postCalStartEvent = null
         preCalibrationResult = null
         arrivalOffsetMs = null
+        postCalibrationArmed = false
+        pendingPostStop = null
         onStimulus(StimulusMirror.Idle)
     }
 

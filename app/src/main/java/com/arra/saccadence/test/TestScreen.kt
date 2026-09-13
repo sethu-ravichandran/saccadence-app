@@ -433,7 +433,9 @@ internal fun EyeCaptureArea(controller: TrialSessionController, phase: TrialPhas
                                             val cy = (result.guardBox.top + result.guardBox.bottom) / 2
                                             guardTracker.observe(cx, cy, now)
                                         } else {
-                                            guardTracker.staleCheck(now)
+                                            // A miss breaks the lock streak immediately; staleCheck
+                                            // still owns the "marker lost entirely" wording.
+                                            guardTracker.staleCheck(now) ?: guardTracker.observeMiss()
                                         }
                                         val stats = statsTracker.observe(result != null, now)
                                         mainExecutor.execute {
@@ -523,12 +525,33 @@ internal fun EyeCaptureArea(controller: TrialSessionController, phase: TrialPhas
         }
 
         val isMarkerPhase = phase is TrialPhase.SetupCalibration || phase is TrialPhase.Ready ||
-            phase is TrialPhase.PreCalibration || phase is TrialPhase.PostCalibration
+            phase is TrialPhase.PreCalibration || phase is TrialPhase.PostCalibration ||
+            phase is TrialPhase.AwaitingPostCalibration
         if (isMarkerPhase) {
             MarkerAimGuide(modifier = Modifier.fillMaxSize())
         }
 
-        if (phase is TrialPhase.SetupCalibration || phase is TrialPhase.Ready) {
+        if (phase is TrialPhase.AwaitingPostCalibration) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(Spacing.md),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                PreviewStatRow(stats = previewStats)
+                CaptureQualityLine(
+                    quality = CaptureQuality.Idle,
+                    label = "Turn the phone back to the laptop marker",
+                )
+                PrimaryButton(
+                    label = "Go to closing calibration",
+                    onClick = { controller.startPostCalibration() },
+                    enabled = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        } else if (phase is TrialPhase.SetupCalibration || phase is TrialPhase.Ready) {
             if (!readyLock.locked) readySent = false
             Column(
                 modifier = Modifier
@@ -545,12 +568,19 @@ internal fun EyeCaptureArea(controller: TrialSessionController, phase: TrialPhas
                     quality = if (readyLock.locked) CaptureQuality.Good else CaptureQuality.Idle,
                     label = readyLock.statusText,
                 )
-                PrimaryButton(
-                    label = if (readySent) "Waiting for clinician to start on rig…" else "Start test",
-                    onClick = { readySent = true; controller.sendPhoneReady() },
-                    enabled = readyLock.locked && !readySent,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                // Hidden, not merely disabled, until the marker actually decodes.
+                // A greyed-out "Start test" reads as "the app is busy" and the
+                // operator waits; an absent one sends them back to the aim guide,
+                // which is the only thing that can fix an undecoded marker. Every
+                // trial lost to INSUFFICIENT_SAMPLES so far started here.
+                if (readyLock.locked) {
+                    PrimaryButton(
+                        label = if (readySent) "Waiting for clinician to start on rig…" else "Start test",
+                        onClick = { readySent = true; controller.sendPhoneReady() },
+                        enabled = !readySent,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         } else {
             Column(

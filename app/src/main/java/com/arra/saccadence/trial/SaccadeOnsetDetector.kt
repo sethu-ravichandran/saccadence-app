@@ -54,8 +54,16 @@ class SaccadeOnsetDetector(
      * several hundred degrees (the operator's hand, not the patient's head)
      * and would reject every step; what actually corrupts a latency is motion
      * during the ~100 ms around the onset, which is what this now measures.
+     *
+     * Widened from 6 deg after it rejected 5 of 10 otherwise-good steps on a
+     * handheld run whose residual drift read 374 deg: at this scale 6 deg is
+     * 1.4% of an eye width, which an unbraced hand exceeds constantly. 60 deg
+     * (~14% of an eye width across the onset) still catches a genuine lurch
+     * while letting normal hand movement through. The trial's own
+     * `residualHeadDriftDeg` remains in the error budget either way, so the
+     * motion is reported rather than hidden by the looser gate.
      */
-    private val headDriftBoundDeg: Double = 6.0,
+    private val headDriftBoundDeg: Double = 60.0,
     /**
      * Sigmas of measured fixation noise a displacement must clear. Set low
      * deliberately: this is a handheld, poorly-lit clinic aid, not a chin-rest

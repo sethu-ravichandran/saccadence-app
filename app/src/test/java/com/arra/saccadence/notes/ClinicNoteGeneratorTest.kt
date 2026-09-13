@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.io.path.createTempDirectory
 
 class ClinicNoteGeneratorTest {
 
@@ -61,9 +62,12 @@ class ClinicNoteGeneratorTest {
     }
 
     @Test
-    fun `deterministic note surfaces quality flags when present`() {
+    fun `deterministic note keeps raw quality reason codes out of clinician-facing text`() {
+        // Reason codes are developer output; they stay in the stored trial
+        // record, not on the note a clinician reads. The timing verdict states
+        // the measurement conditions in plain language instead.
         val note = deterministic.generate(input(qualityStatus = "flagged", qualityReasons = listOf("excess_head_drift")))
-        assertTrue(note.text.contains("excess_head_drift"))
+        assertTrue("raw reason code leaked into the note", !note.text.contains("excess_head_drift"))
     }
 
     // ---- guardrail ------------------------------------------------------
@@ -128,6 +132,36 @@ class ClinicNoteGeneratorTest {
             createInference = { throw IllegalStateException("simulated model load failure") },
         )
         val note = generator.generate(input())
-        assertEquals("deterministic", note.source)
+
+        // Text must be the deterministic note verbatim...
+        assertEquals(DeterministicClinicNoteGenerator().generate(input()).text, note.text)
+        assertTrue("must not be offered as a draft", !note.isDraft)
+        // ...and the source must say the LLM was unavailable and why, so the
+        // operator sees an explanation instead of the app vanishing.
+        assertTrue("source should report unavailability, got: ${note.source}",
+            note.source.startsWith("deterministic - LLM unavailable"))
+        assertTrue("reason should be carried through, got: ${note.source}",
+            note.source.contains("simulated model load failure"))
+    }
+
+    @Test
+    fun `Gemma generator refuses the model after a previous native crash`() {
+        // A native SIGSEGV can't be caught, so it's detected after the fact via
+        // the in-flight sentinel. Finding one must stop the model being touched
+        // again rather than taking the process down a second time.
+        val dir = createTempDirectory().toFile()
+        val modelFile = java.io.File(dir, "gemma.task").apply { writeText("stub") }
+        java.io.File(dir, "gemma_inference_inflight").writeText("inflight")
+
+        var created = false
+        val generator = GemmaClinicNoteGenerator(
+            modelPath = modelFile.absolutePath,
+            createInference = { created = true; throw IllegalStateException("should never be reached") },
+        )
+        val note = generator.generate(input())
+
+        assertTrue("model must not be loaded after a crash sentinel", !created)
+        assertTrue("source should name the crash, got: ${note.source}",
+            note.source.contains("previous inference crashed"))
     }
 }

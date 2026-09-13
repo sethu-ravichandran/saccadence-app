@@ -109,9 +109,9 @@ class SaccadeOnsetDetectorTest {
     fun `rejects onset flagged by excess head drift`() {
         val threshold = detector.displacementThresholdFrom(quietBaseline())
         val samples = simulatedSaccade(stepAmplitudeDeg = 12.0, latencyMs = 220.0)
-            // Past the handheld-tolerant bound, measured against this step's own
-            // pre-step baseline rather than a trial-start baseline.
-            .map { if (it.phoneTimeMs in 210.0..260.0) it.copy(headDriftDeg = 12.0) else it }
+            // Past the handheld-tolerant bound (60 deg), measured against this
+            // step's own pre-step baseline rather than a trial-start baseline.
+            .map { if (it.phoneTimeMs in 210.0..260.0) it.copy(headDriftDeg = 80.0) else it }
         val stimulus = StepStimulus(targetIndex = 1, stimulusPhoneTimeMs = 0.0, stepAmplitudeDeg = 12.0)
 
         val result = detector.detectOnset(stimulus, samples, threshold)
