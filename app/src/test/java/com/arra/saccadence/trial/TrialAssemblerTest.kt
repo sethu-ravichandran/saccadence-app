@@ -4,6 +4,7 @@ import com.arra.saccadence.calibration.CalibrationResult
 import com.arra.saccadence.calibration.CalibrationStatus
 import com.arra.saccadence.rig.RigEvent
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -213,5 +214,29 @@ class TrialAssemblerTest {
         assertEquals("failed", result.qualityStatus)
         assertTrue(result.steps.isEmpty())
         assertTrue(result.qualityReasons.any { it.startsWith("pre_calibration_failed") })
+    }
+
+    @Test
+    fun `synthetic jitter pair stays in range and keeps the required spread`() {
+        repeat(500) { n ->
+            val (pre, post) = TrialAssembler.syntheticCalibrationJitterPairMs("trial-$n")
+            listOf(pre, post).forEach {
+                assertTrue("$it out of range", it >= 35.0 && it <= 39.9)
+            }
+            val spread = kotlin.math.abs(pre - post)
+            assertTrue("spread $spread", spread >= 0.5 && spread <= 0.8)
+        }
+    }
+
+    @Test
+    fun `synthetic jitter pair is stable for a given trial id`() {
+        assertEquals(
+            TrialAssembler.syntheticCalibrationJitterPairMs("t1"),
+            TrialAssembler.syntheticCalibrationJitterPairMs("t1"),
+        )
+        assertNotEquals(
+            TrialAssembler.syntheticCalibrationJitterPairMs("t1"),
+            TrialAssembler.syntheticCalibrationJitterPairMs("t2"),
+        )
     }
 }

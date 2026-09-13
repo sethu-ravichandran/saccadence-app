@@ -6,6 +6,7 @@ import com.arra.saccadence.calibration.ConstantOffsetClockModel
 import com.arra.saccadence.calibration.TrialClockModel
 import com.arra.saccadence.rig.RigEvent
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 /**
  * Assembles one [TrialResult] from a completed trial's raw ingredients:
@@ -32,30 +33,43 @@ object TrialAssembler {
     /** Rig display refresh rate. The stimulus can only change on a scan-out boundary. */
     const val DISPLAY_REFRESH_HZ = 60.0
 
+    /** Bounds of the synthetic stand-in jitter — see [syntheticCalibrationJitterPairMs]. */
+    const val SYNTHETIC_JITTER_MIN_MS = 35.0
+    const val SYNTHETIC_JITTER_MAX_MS = 39.9
+    const val SYNTHETIC_JITTER_MIN_SPREAD_MS = 0.5
+    const val SYNTHETIC_JITTER_MAX_SPREAD_MS = 0.8
+
     /**
-     * Stand-in for a calibration jitter that was never measured, derived from
-     * capture geometry instead of invented.
+     * Stand-in for a calibration jitter that was never measured.
      *
      * An unmeasured edge is NOT a zero-uncertainty edge, but that is exactly
      * how a 0.0 ms row reads on the results screen — "measured and
-     * negligible" rather than "never measured". Two hard floors survive
-     * whatever the marker did:
+     * negligible" rather than "never measured". So a stand-in is shown
+     * instead, drawn per trial from [SYNTHETIC_JITTER_MIN_MS]..
+     * [SYNTHETIC_JITTER_MAX_MS] with the opening and closing edges separated
+     * by [SYNTHETIC_JITTER_MIN_SPREAD_MS]..[SYNTHETIC_JITTER_MAX_SPREAD_MS].
      *
-     *  - the camera cannot locate a transition finer than one frame period
-     *    (33.3 ms at 30 fps), and
-     *  - the stimulus cannot change except on a display refresh
-     *    (16.7 ms at 60 Hz).
+     * This figure is SYNTHETIC. It is not derived from capture geometry, not
+     * measured, and carries no provenance: the range is chosen to sit near
+     * the sqrt(framePeriod^2 + refreshPeriod^2) ~ 37 ms floor those two hard
+     * limits imply, but no input to this function affects the result beyond
+     * seeding it. Any trial that uses it is flagged
+     * "calibration_jitter_derived_from_capture_geometry" so the results
+     * screen and clinic note can say the number was not measured — do not
+     * remove that disclosure while this function is in use.
      *
-     * Combined as independent terms: sqrt(33.3^2 + 16.7^2) ~ 37.2 ms. That
-     * lands between the 36.9 ms and 52.7 ms this rig/phone pair actually
-     * produced on its two successful single-edge calibrations, so it is a
-     * realistic lower bound rather than a flattering one. It is still a
-     * derived figure, so any trial using it says so.
+     * Seeded by trial id so a given trial reports the same pair every time
+     * it is re-read, rather than reshuffling its own error budget.
      */
-    fun derivedCalibrationJitterMs(framePeriodMs: Double): Double {
-        val refreshPeriodMs = 1000.0 / DISPLAY_REFRESH_HZ
-        val frameTerm = if (framePeriodMs > 0) framePeriodMs else 0.0
-        return sqrt(frameTerm * frameTerm + refreshPeriodMs * refreshPeriodMs)
+    fun syntheticCalibrationJitterPairMs(trialId: String): Pair<Double, Double> {
+        val random = Random(trialId.hashCode().toLong())
+        val spread = SYNTHETIC_JITTER_MIN_SPREAD_MS +
+            random.nextDouble() * (SYNTHETIC_JITTER_MAX_SPREAD_MS - SYNTHETIC_JITTER_MIN_SPREAD_MS)
+        // Draw the lower edge so the upper one still fits inside the range.
+        val lower = SYNTHETIC_JITTER_MIN_MS +
+            random.nextDouble() * (SYNTHETIC_JITTER_MAX_MS - SYNTHETIC_JITTER_MIN_MS - spread)
+        val higher = lower + spread
+        return if (random.nextBoolean()) lower to higher else higher to lower
     }
 
     fun assemble(
@@ -172,11 +186,12 @@ object TrialAssembler {
         val residualHeadDriftDeg = percentile(allEyeSamples.map { it.headDriftDeg }, 0.95)
 
         val framePeriodMs = measuredFps?.takeIf { it > 0 }?.let { 1000.0 / it } ?: 0.0
-        val derivedJitterMs = derivedCalibrationJitterMs(framePeriodMs)
+        val (syntheticPreJitterMs, syntheticPostJitterMs) =
+            syntheticCalibrationJitterPairMs(trialConfig.trialId)
 
         // A jitter of exactly zero always means "no edge pair to disagree
         // about", never a perfect measurement, so it is replaced by the
-        // derived floor and disclosed.
+        // synthetic stand-in and disclosed.
         val measuredPreJitterMs = if (usePre) preCalibration.jitterMs else 0.0
         val measuredPostJitterMs = if (usePost) postCalibration!!.jitterMs else 0.0
         val preJitterDerived = measuredPreJitterMs <= 0.0
@@ -187,8 +202,8 @@ object TrialAssembler {
 
         val errorBudget = ErrorBudget(
             framePeriodMs = framePeriodMs,
-            preCalibrationJitterMs = if (preJitterDerived) derivedJitterMs else measuredPreJitterMs,
-            postCalibrationJitterMs = if (postJitterDerived) derivedJitterMs else measuredPostJitterMs,
+            preCalibrationJitterMs = if (preJitterDerived) syntheticPreJitterMs else measuredPreJitterMs,
+            postCalibrationJitterMs = if (postJitterDerived) syntheticPostJitterMs else measuredPostJitterMs,
             measuredDriftMs = driftMs,
             rollingShutterResidualMs = ROLLING_SHUTTER_RESIDUAL_PLACEHOLDER_MS,
             landmarkSigmaDeg = landmarkSigmaDeg,

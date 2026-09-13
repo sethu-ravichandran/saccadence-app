@@ -94,14 +94,13 @@ class DeterministicClinicNoteGenerator : ClinicNoteGenerator {
             return "Clock calibration: no timing bracket recorded this visit.$budgetPhrase"
         }
         if (input.jitterDerivedFromGeometry) {
-            // States the bound and its provenance ("derived") without narrating
-            // the calibration failure that led to it. Still never says
-            // "measured" — that word is the one a reviewer would test, and
-            // claiming it is the real overclaim. The reason codes remain in the
-            // stored record for anyone who asks how it was arrived at.
-            return "Clock calibration: timing bound derived from capture geometry -- " +
-                "${"%.1f".format(opening)} ms per bracket, from the camera frame period and " +
-                "the display refresh interval.$budgetPhrase"
+            // One clause, no narration of the calibration failure behind it.
+            // Never says "measured" — the stand-in is not a measurement and
+            // must not read as one. It is also no longer derived from capture
+            // geometry, so this must not name a provenance it doesn't have.
+            // The reason codes remain in the stored record.
+            return "Clock calibration: timing bound not measured this session; " +
+                "stand-in of ${"%.1f".format(opening)} ms per bracket.$budgetPhrase"
         }
         val delta = kotlin.math.abs(opening - closing)
         val agree = delta <= JITTER_AGREEMENT_TOLERANCE_MS
@@ -239,8 +238,18 @@ class GemmaClinicNoteGenerator(
      */
     private fun rewriteWithGemma(model: LlmInference, templateText: String): String {
         val prompt = "Rewrite the following clinical note as one short, plain-language " +
-            "paragraph for a clinician. Do not add any number, fact, or diagnosis that " +
-            "is not already stated below. Keep every measurement exactly as given.\n\n" +
+            "paragraph for a clinician.\n\n" +
+            "Rules:\n" +
+            "- Restate only what the note below says. Every sentence in your output " +
+            "must correspond to a sentence in the note.\n" +
+            "- Do not add any number, fact, diagnosis, cause, or recommendation that " +
+            "is not already stated below.\n" +
+            "- Keep every measurement exactly as given, including its units and sign.\n" +
+            "- Do not speculate about why a value is what it is, and do not add caveats, " +
+            "hedges, or commentary of your own.\n" +
+            "- Do not drop or soften any statement about what was or was not measured.\n" +
+            "- Output the paragraph only, with no preamble or closing remark.\n\n" +
+            "Note:\n" +
             templateText
         return model.generateResponse(prompt)
     }

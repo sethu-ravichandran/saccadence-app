@@ -122,8 +122,20 @@ fun ResultsScreen(
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 MonoEyebrow("ERROR BUDGET")
                 AuditLine("Frame period (${"%.1f".format(result.measuredFps ?: 0.0)} fps)", "%.1f ms".format(budget.framePeriodMs))
-                AuditLine("Opening calibration jitter", "%.1f ms".format(budget.preCalibrationJitterMs))
-                AuditLine("Closing calibration jitter", "%.1f ms".format(budget.postCalibrationJitterMs))
+                // A stand-in jitter is labelled on the row itself. Unlabelled,
+                // it reads as an instrument reading, which is the one thing it
+                // is not — the clinic note carries the same disclosure.
+                val jitterSuffix = if (
+                    result.qualityReasons.contains("calibration_jitter_derived_from_capture_geometry")
+                ) " (not measured)" else ""
+                AuditLine(
+                    "Opening calibration jitter$jitterSuffix",
+                    "%.1f ms".format(budget.preCalibrationJitterMs),
+                )
+                AuditLine(
+                    "Closing calibration jitter$jitterSuffix",
+                    "%.1f ms".format(budget.postCalibrationJitterMs),
+                )
                 AuditLine("Measured clock drift across trial", "%.1f ms".format(budget.measuredDriftMs))
                 AuditLine("Rolling-shutter residual", "%.1f ms".format(budget.rollingShutterResidualMs))
                 AuditLine("Landmark jitter", "%.2f°".format(budget.landmarkSigmaDeg))
