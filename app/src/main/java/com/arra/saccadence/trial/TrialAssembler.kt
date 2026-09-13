@@ -43,25 +43,51 @@ object TrialAssembler {
         measuredFps: Double?,
         createdAtMs: Long,
         driftGateBoundMs: Double = DEFAULT_DRIFT_GATE_BOUND_MS,
+        arrivalOffsetMs: Double? = null,
     ): TrialResult {
         val reasons = mutableListOf<String>()
 
-        if (preCalibration.status != CalibrationStatus.OK) {
+        // The optical calibration is how a stimulus time becomes a phone time.
+        // When it yields nothing usable there is still one much weaker anchor
+        // available: the phone clock reading when the trial's first rig event
+        // arrived. Using it biases every stimulus time late by one network
+        // hop (~1-10 ms on a clinic LAN) and carries no measured jitter bound,
+        // so the trial can never be reported as valid — but discarding the
+        // run outright threw away eye data that was captured perfectly well,
+        // and left the operator with a blank results screen and no way to tell
+        // a marker-framing mistake from a measurement failure.
+        val usePre = preCalibration.status.isUsable
+        if (!usePre) {
             reasons += "pre_calibration_failed:${preCalibration.status}"
-            return failedTrial(patientId, trialConfig, reasons, measuredFps, createdAtMs)
+            if (arrivalOffsetMs == null) {
+                return failedTrial(patientId, trialConfig, reasons, measuredFps, createdAtMs)
+            }
+            reasons += "clock_offset_unmeasured_arrival_time_fallback"
+        }
+        if (usePre && preCalibration.status == CalibrationStatus.SINGLE_EDGE) {
+            reasons += "pre_calibration_single_edge"
         }
 
-        val usePost = postCalibration != null && postCalibration.status == CalibrationStatus.OK && postCalibrationLaptopTimeMs != null
-        if (!usePost) {
+        val usePost = usePre && postCalibration != null && postCalibration.status.isUsable && postCalibrationLaptopTimeMs != null
+        if (usePre && !usePost) {
             reasons += "closing_calibration_unavailable_constant_offset_fallback"
+        } else if (postCalibration!!.status == CalibrationStatus.SINGLE_EDGE) {
+            reasons += "post_calibration_single_edge"
         }
 
-        val toPhoneTimeMs: (Double) -> Double = if (usePost) {
-            val model = TrialClockModel(preCalibration, postCalibration!!, preCalibrationLaptopTimeMs, postCalibrationLaptopTimeMs!!)
-            model::toPhoneTimeMs
-        } else {
-            val model = ConstantOffsetClockModel(preCalibration)
-            model::toPhoneTimeMs
+        val toPhoneTimeMs: (Double) -> Double = when {
+            usePost -> {
+                val model = TrialClockModel(preCalibration, postCalibration!!, preCalibrationLaptopTimeMs, postCalibrationLaptopTimeMs!!)
+                model::toPhoneTimeMs
+            }
+            usePre -> {
+                val model = ConstantOffsetClockModel(preCalibration)
+                model::toPhoneTimeMs
+            }
+            else -> {
+                val offset = arrivalOffsetMs!!
+                { laptopTimeMs: Double -> laptopTimeMs + offset }
+            }
         }
 
         val driftMs = if (usePost) postCalibration!!.offsetMs - preCalibration.offsetMs else 0.0
@@ -70,7 +96,7 @@ object TrialAssembler {
         }
 
         val onsetDetector = SaccadeOnsetDetector()
-        val velocityThreshold = onsetDetector.velocityThresholdFrom(fixationEyeSamples)
+        val onsetThreshold = onsetDetector.displacementThresholdFrom(fixationEyeSamples)
 
         val steps = targetSteps
             .filter { it.stepAmplitudeDeg != null } // index 0 is the center dot, not a scored step
@@ -80,7 +106,7 @@ object TrialAssembler {
                     stimulusPhoneTimeMs = toPhoneTimeMs(step.laptopTimeMs),
                     stepAmplitudeDeg = step.stepAmplitudeDeg!!,
                 )
-                onsetDetector.detectOnset(stimulus, allEyeSamples, velocityThreshold)
+                onsetDetector.detectOnset(stimulus, allEyeSamples, onsetThreshold)
             }
 
         val pursuitFitter = PursuitGainFitter()
@@ -104,12 +130,21 @@ object TrialAssembler {
             pursuitFitter.fit(stimulus, allEyeSamples)
         }
 
+        if (steps.any { it.accepted && it.rejectReason == "best_effort_below_threshold" }) {
+            reasons += "saccade_onsets_best_effort_below_threshold"
+        }
+        if (sweepMeasurements.any { it.accepted && it.rejectReason == "thin_fit_below_retained_sample_target" }) {
+            reasons += "pursuit_thin_fit"
+        }
+
         val landmarkSigmaDeg = standardDeviation(fixationEyeSamples.map { it.xDeg })
-        val residualHeadDriftDeg = allEyeSamples.maxOfOrNull { it.headDriftDeg } ?: 0.0
+        // 95th percentile, not max: a single lost-face or blink frame used to
+        // pin the whole trial's headline figure at an impossible value.
+        val residualHeadDriftDeg = percentile(allEyeSamples.map { it.headDriftDeg }, 0.95)
 
         val errorBudget = ErrorBudget(
             framePeriodMs = measuredFps?.takeIf { it > 0 }?.let { 1000.0 / it } ?: 0.0,
-            preCalibrationJitterMs = preCalibration.jitterMs,
+            preCalibrationJitterMs = if (usePre) preCalibration.jitterMs else 0.0,
             postCalibrationJitterMs = if (usePost) postCalibration!!.jitterMs else 0.0,
             measuredDriftMs = driftMs,
             rollingShutterResidualMs = ROLLING_SHUTTER_RESIDUAL_PLACEHOLDER_MS,
@@ -151,6 +186,14 @@ object TrialAssembler {
         qualityReasons = reasons,
         measuredFps = measuredFps,
     )
+
+    /** Robust upper-range figure: ignores the isolated bad frame a max would latch onto. */
+    private fun percentile(values: List<Double>, fraction: Double): Double {
+        if (values.isEmpty()) return 0.0
+        val sorted = values.sorted()
+        val index = ((sorted.size - 1) * fraction).toInt().coerceIn(0, sorted.size - 1)
+        return sorted[index]
+    }
 
     private fun standardDeviation(values: List<Double>): Double {
         if (values.size < 2) return 0.0

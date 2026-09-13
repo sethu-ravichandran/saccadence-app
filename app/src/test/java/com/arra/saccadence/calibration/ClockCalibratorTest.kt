@@ -85,10 +85,18 @@ class ClockCalibratorTest {
     }
 
     @Test
-    fun `flags no fall edge when the guard never returns idle`() {
+    fun `degrades to a rise-only offset when the guard never returns idle`() {
+        // On real hardware the stop event outruns the camera frame that would
+        // show the fall edge, so this is the common case, not a corner case —
+        // it must yield a usable offset from the rise edge, flagged, not fail.
         val riseOnly = (0..500 step 10).map { MarkerSample(it.toDouble(), active = it >= 100) }
         val result = ClockCalibrator.calibrate("pre", "t1", riseOnly, 100.0, 9999.0)
-        assertEquals(CalibrationStatus.NO_FALL_EDGE, result.status)
+        assertEquals(CalibrationStatus.SINGLE_EDGE, result.status)
+        assertTrue(result.status.isUsable)
+        // Rise edge is bracketed between the samples at t=90 and t=100 -> midpoint 95;
+        // the laptop said the flip happened at 100 -> offset -5, uncertainty = the 10ms gap.
+        assertEquals(-5.0, result.offsetMs, 0.001)
+        assertEquals(10.0, result.jitterMs, 0.001)
     }
 
     @Test

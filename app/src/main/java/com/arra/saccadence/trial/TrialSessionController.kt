@@ -35,6 +35,24 @@ sealed interface TrialPhase {
  */
 private const val CONNECT_FAILURE_WARNING_THRESHOLD = 3
 
+/**
+ * How long to keep collecting marker frames after a calibration_stop event
+ * before computing the bracket. The stop message arrives over the WebSocket
+ * within milliseconds of the guard flipping red, but the camera frame that
+ * shows the red guard is up to a frame period (~33ms at 30fps) plus decode
+ * latency behind — computing immediately loses the fall edge almost every
+ * time (the on-device NO_FALL_EDGE failure). Buffering keeps running during
+ * this window because the phase only advances on the next block event.
+ */
+private const val CALIBRATION_SETTLE_MS = 600L
+
+/**
+ * Landmark frames to let pass at the start of the fixation block before
+ * fixing the head-pose baseline — see [TrialSessionController.onLandmarkFrame].
+ * ~1/3 s at 30fps, well inside the 10s fixation block.
+ */
+private const val BASELINE_SETTLE_FRAMES = 10
+
 class TrialSessionController(
     private val patientId: String,
     private val trialRepository: TrialRepository,
@@ -61,6 +79,19 @@ class TrialSessionController(
     private var postCalStartEvent: RigEvent.CalibrationStart? = null
     private var preCalibrationResult: CalibrationResult? = null
 
+    /**
+     * Laptop->phone offset inferred from the arrival time of the first rig
+     * event of the trial, used ONLY when the optical calibration produced no
+     * usable offset at all. See [TrialAssembler]'s arrival-time fallback for
+     * what this costs and why the trial is flagged when it is used.
+     *
+     * The two clocks have unrelated epochs (rig `performance.now()` vs the
+     * phone's `System.nanoTime()`), so without *some* offset a stimulus time
+     * cannot be expressed in phone time at all — which is why a failed marker
+     * used to discard the whole trial including its eye data.
+     */
+    private var arrivalOffsetMs: Double? = null
+
     private var preMarkerBuffer = mutableListOf<MarkerSample>()
     private var postMarkerBuffer = mutableListOf<MarkerSample>()
     private val targetSteps = mutableListOf<RigEvent.TargetStep>()
@@ -71,8 +102,13 @@ class TrialSessionController(
 
     private val geometryConverter = EyeGeometryConverter()
     private var baselineSet = false
+    private var baselineSkipCount = 0
     private var landmarkFrameCount = 0
     private var landmarkWindowStartMs: Long? = null
+
+    // For the calibration settle window — rig events already arrive on the
+    // main thread, so delayed work posts back to the same thread.
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
 
     fun connect(host: String, port: Int, sessionCode: String) {
         phase = TrialPhase.Connecting
@@ -142,9 +178,19 @@ class TrialSessionController(
         if (!inTrialBlock) return
 
         synchronized(lock) {
+            // Skip the opening frames of the fixation block before fixing the
+            // head-pose baseline: EyeLandmarkTracker.latestFrame() hands back
+            // whatever MediaPipe result last completed, so the first frames of
+            // a block can still carry a pose computed before the patient was
+            // framed. A baseline taken from one of those makes every later
+            // frame look like a huge head translation (the on-device 75deg
+            // residual-drift reading).
             if (!baselineSet) {
-                geometryConverter.setBaseline(frame)
-                baselineSet = true
+                baselineSkipCount++
+                if (baselineSkipCount >= BASELINE_SETTLE_FRAMES) {
+                    geometryConverter.setBaseline(frame)
+                    baselineSet = true
+                }
             }
             val sample = geometryConverter.toEyeSample(frame)
             allEyeSamples.add(sample)
@@ -173,35 +219,47 @@ class TrialSessionController(
             }
             is RigEvent.CalibrationStop -> when (event.role) {
                 "setup" -> phase = TrialPhase.Ready
+                // Both trial brackets compute after CALIBRATION_SETTLE_MS, not
+                // immediately: the stop event beats the camera frame that shows
+                // the guard's fall edge (see the constant's doc). The start-event
+                // identity check guards against a new trial having reset state
+                // while the delayed work was pending.
                 "pre" -> {
                     val start = preCalStartEvent
-                    val samples = synchronized(lock) { preMarkerBuffer.toList() }
                     if (start != null) {
-                        preCalibrationResult = ClockCalibrator.calibrate("pre", start.trialId, samples, start.laptopTimeMs, event.laptopTimeMs)
-                        android.util.Log.d(
-                            "SaccCal",
-                            "pre-cal done: samples=${samples.size} active=${samples.count { it.active }} " +
-                                "status=${preCalibrationResult?.status} offset=${preCalibrationResult?.offsetMs} jitter=${preCalibrationResult?.jitterMs}"
-                        )
+                        mainHandler.postDelayed({
+                            if (preCalStartEvent !== start) return@postDelayed
+                            val samples = synchronized(lock) { preMarkerBuffer.toList() }
+                            preCalibrationResult = ClockCalibrator.calibrate("pre", start.trialId, samples, start.laptopTimeMs, event.laptopTimeMs)
+                            android.util.Log.d(
+                                "SaccCal",
+                                "pre-cal done: samples=${samples.size} active=${samples.count { it.active }} " +
+                                    "status=${preCalibrationResult?.status} offset=${preCalibrationResult?.offsetMs} jitter=${preCalibrationResult?.jitterMs}"
+                            )
+                        }, CALIBRATION_SETTLE_MS)
                     }
                 }
                 "post" -> {
                     val start = postCalStartEvent
-                    val samples = synchronized(lock) { postMarkerBuffer.toList() }
-                    val postResult = if (start != null) {
-                        ClockCalibrator.calibrate("post", start.trialId, samples, start.laptopTimeMs, event.laptopTimeMs)
-                    } else null
-                    android.util.Log.d(
-                        "SaccCal",
-                        "post-cal done: samples=${samples.size} active=${samples.count { it.active }} status=${postResult?.status}"
-                    )
-                    completeTrial(postResult, postCalStartEvent?.laptopTimeMs)
+                    mainHandler.postDelayed({
+                        if (postCalStartEvent !== start) return@postDelayed
+                        val samples = synchronized(lock) { postMarkerBuffer.toList() }
+                        val postResult = if (start != null) {
+                            ClockCalibrator.calibrate("post", start.trialId, samples, start.laptopTimeMs, event.laptopTimeMs)
+                        } else null
+                        android.util.Log.d(
+                            "SaccCal",
+                            "post-cal done: samples=${samples.size} active=${samples.count { it.active }} status=${postResult?.status}"
+                        )
+                        completeTrial(postResult, start?.laptopTimeMs)
+                    }, CALIBRATION_SETTLE_MS)
                 }
             }
             is RigEvent.BlockStart -> {
                 phase = when (event.block) {
                     "fixation" -> {
                         baselineSet = false
+                        baselineSkipCount = 0
                         // The rig holds a steady centre dot through fixation, so the
                         // mirror shows one too. Emitting Idle here was a bug: it left
                         // the operator's panel blank for the whole block while the
@@ -214,7 +272,14 @@ class TrialSessionController(
                     else -> phase
                 }
             }
-            is RigEvent.TrialConfig -> trialConfig = event
+            is RigEvent.TrialConfig -> {
+                trialConfig = event
+                // Earliest trial event carrying a laptop timestamp — the cheapest
+                // point to pin the two epochs together if the marker fails.
+                if (arrivalOffsetMs == null) {
+                    arrivalOffsetMs = phoneClockMs() - event.laptopTimeMs
+                }
+            }
             is RigEvent.TargetStep -> {
                 val previous = synchronized(lock) {
                     val last = targetSteps.lastOrNull()
@@ -265,14 +330,24 @@ class TrialSessionController(
      */
     private fun Double.toPhoneClock(): Double? {
         val calibration = preCalibrationResult ?: return null
-        if (calibration.status != CalibrationStatus.OK) return null
+        if (!calibration.status.isUsable) return null
         return this + calibration.offsetMs
     }
 
     private fun completeTrial(postResult: CalibrationResult?, postStartLaptopTimeMs: Double?) {
-        val config = trialConfig
+        val config = trialConfig ?: return // nothing to assemble — rig sequencing guarantees a trial_config precedes a post calibration.
+        // A pre-calibration that never produced a result at all is treated the
+        // same as one that produced an unusable one: the assembler decides
+        // whether the arrival-time fallback can rescue the trial's eye data.
         val pre = preCalibrationResult
-        if (config == null || pre == null) return // nothing to assemble — rig sequencing guarantees these precede a post calibration.
+            ?: CalibrationResult(
+                role = "pre",
+                trialId = config.trialId,
+                offsetMs = 0.0,
+                jitterMs = 0.0,
+                sampleCount = 0,
+                status = CalibrationStatus.INSUFFICIENT_SAMPLES,
+            )
 
         val (steps, sweepPairs, fixation, allEye, fps) = synchronized(lock) {
             val elapsedSec = landmarkWindowStartMs?.let { start ->
@@ -296,6 +371,7 @@ class TrialSessionController(
             allEyeSamples = allEye,
             measuredFps = fps,
             createdAtMs = System.currentTimeMillis(),
+            arrivalOffsetMs = arrivalOffsetMs,
         )
 
         trialRepository.save(result)
@@ -303,6 +379,9 @@ class TrialSessionController(
         onStimulus(StimulusMirror.Idle)
         phase = TrialPhase.Complete(result)
     }
+
+    /** Same timebase the camera stamps marker/landmark samples with. */
+    private fun phoneClockMs(): Double = System.nanoTime() / 1_000_000.0
 
     private fun resetTrialBuffers() {
         synchronized(lock) {
@@ -317,8 +396,10 @@ class TrialSessionController(
             landmarkWindowStartMs = null
         }
         baselineSet = false
+        baselineSkipCount = 0
         postCalStartEvent = null
         preCalibrationResult = null
+        arrivalOffsetMs = null
         onStimulus(StimulusMirror.Idle)
     }
 

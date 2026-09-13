@@ -81,7 +81,20 @@ class EyeLandmarkTracker(context: Context) {
     /** Feeds one camera frame in; the result (if any) arrives asynchronously via the listener above. */
     fun analyze(image: ImageProxy, phoneTimeMs: Long) {
         val bitmap = image.toBitmap() // see extension below — YUV_420_888 -> ARGB_8888
-        val mpImage = BitmapImageBuilder(bitmap).build()
+        // The analyzer delivers the UNROTATED sensor buffer (rotationDegrees=90
+        // in portrait — same fact that forced the marker decoder to full-frame
+        // ROI). BlazeFace is rotation-sensitive: fed sideways, it misses faces
+        // outright (the on-device "no face detected whatever I do" failure) or
+        // returns left/right-scrambled landmarks. Rotate upright first, the
+        // same way MediaPipe's own FaceLandmarker sample does.
+        val rotationDegrees = image.imageInfo.rotationDegrees
+        val upright = if (rotationDegrees != 0) {
+            val matrix = android.graphics.Matrix().apply { postRotate(rotationDegrees.toFloat()) }
+            android.graphics.Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        } else {
+            bitmap
+        }
+        val mpImage = BitmapImageBuilder(upright).build()
         landmarker.detectAsync(mpImage, phoneTimeMs)
     }
 

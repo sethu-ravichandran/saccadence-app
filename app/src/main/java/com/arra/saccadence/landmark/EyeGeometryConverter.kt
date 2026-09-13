@@ -27,7 +27,7 @@ import kotlin.math.abs
  * presented as measured.
  */
 class EyeGeometryConverter(
-    private val degPerUnitOffsetRatio: Double = 40.0,
+    private val degPerUnitOffsetRatio: Double = 430.0,
 ) {
     private var baseline: LandmarkFrame? = null
 

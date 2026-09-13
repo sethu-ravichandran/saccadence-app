@@ -37,7 +37,25 @@ data class CalibrationResult(
     val status: CalibrationStatus,
 )
 
-enum class CalibrationStatus { OK, NO_RISE_EDGE, NO_FALL_EDGE, INSUFFICIENT_SAMPLES }
+enum class CalibrationStatus {
+    OK,
+    /**
+     * Rise edge seen, fall edge never observed — the offset comes from one
+     * synchronization point instead of two. Structurally common on real
+     * hardware: the rig's calibration_stop arrives over the WebSocket within
+     * milliseconds of the guard flipping red, while the camera frame that
+     * would *show* the red guard is still up to a frame period away. Usable,
+     * but flagged: jitter is the single edge's bracket width, not a
+     * two-edge disagreement.
+     */
+    SINGLE_EDGE,
+    NO_RISE_EDGE,
+    NO_FALL_EDGE,
+    INSUFFICIENT_SAMPLES;
+
+    /** Whether an offset from this bracket can be used at all (perfect or degraded). */
+    val isUsable: Boolean get() = this == OK || this == SINGLE_EDGE
+}
 
 object ClockCalibrator {
 
@@ -68,7 +86,17 @@ object ClockCalibrator {
             return CalibrationResult(role, trialId, 0.0, 0.0, samples.size, CalibrationStatus.NO_RISE_EDGE)
         }
         if (fallEdge == null) {
-            return CalibrationResult(role, trialId, 0.0, 0.0, samples.size, CalibrationStatus.NO_FALL_EDGE)
+            // Degrade to a rise-edge-only offset rather than discarding the
+            // bracket. The reported jitter is the honest uncertainty we have:
+            // the width of the frame gap the true edge must fall inside.
+            return CalibrationResult(
+                role = role,
+                trialId = trialId,
+                offsetMs = riseEdge.phoneTimeMs - startLaptopTimeMs,
+                jitterMs = riseEdge.uncertaintyMs,
+                sampleCount = samples.size,
+                status = CalibrationStatus.SINGLE_EDGE,
+            )
         }
 
         val offsetFromRise = riseEdge.phoneTimeMs - startLaptopTimeMs
@@ -119,7 +147,7 @@ class TrialClockModel(
     /** Positive = laptop clock ahead of phone clock; magnitude the pitch quotes on stage. */
     val driftMs: Double get() = post.offsetMs - pre.offsetMs
 
-    val isValid: Boolean get() = pre.status == CalibrationStatus.OK && post.status == CalibrationStatus.OK
+    val isValid: Boolean get() = pre.status.isUsable && post.status.isUsable
 
     fun toPhoneTimeMs(laptopTimeMs: Double): Double {
         val span = postLaptopTimeMs - preLaptopTimeMs
@@ -131,6 +159,6 @@ class TrialClockModel(
 
 /** A trial with only a pre-calibration falls back to a constant offset — flagged, per the plan, not silently accepted. */
 class ConstantOffsetClockModel(private val pre: CalibrationResult) {
-    val isValid: Boolean get() = pre.status == CalibrationStatus.OK
+    val isValid: Boolean get() = pre.status.isUsable
     fun toPhoneTimeMs(laptopTimeMs: Double): Double = laptopTimeMs + pre.offsetMs
 }

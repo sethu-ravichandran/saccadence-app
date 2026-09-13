@@ -524,6 +524,9 @@ internal fun EyeCaptureArea(controller: TrialSessionController, phase: TrialPhas
 
         val isMarkerPhase = phase is TrialPhase.SetupCalibration || phase is TrialPhase.Ready ||
             phase is TrialPhase.PreCalibration || phase is TrialPhase.PostCalibration
+        if (isMarkerPhase) {
+            MarkerAimGuide(modifier = Modifier.fillMaxSize())
+        }
 
         if (phase is TrialPhase.SetupCalibration || phase is TrialPhase.Ready) {
             if (!readyLock.locked) readySent = false
@@ -644,9 +647,11 @@ private fun framingLabel(eyeWidth: Float?): String = when (FaceFramingQuality.fr
     FaceFramingQuality.GOOD -> "Tracking eyes… good framing."
     FaceFramingQuality.AVERAGE -> "Tracking eyes — move the phone closer to the patient's face."
     FaceFramingQuality.BAD -> if (eyeWidth == null) {
-        "No face detected — point the camera at the patient's eyes."
+        // The detector needs the WHOLE face in frame before it can refine the
+        // eyes — an extreme close-up of just an eye reads as "no face" too.
+        "No face detected — frame the patient's whole face, about arm's length away."
     } else {
-        "Too far — move the phone much closer to the patient's face."
+        "Too far — move the phone closer, keeping the whole face in view."
     }
 }
 
@@ -694,6 +699,37 @@ private fun ZoomGlyphButton(glyph: String, onClick: () -> Unit) {
             color = SaccadenceColors.DarkChipText,
             textAlign = TextAlign.Center,
         )
+    }
+}
+
+/**
+ * Corner brackets showing where to aim at the rig's marker, same visual
+ * language as [PairingScreen]'s ScanReticle — four independent L-shapes, not
+ * a full outline, so it reads as "line it up here" without implying the
+ * marker itself must exactly fill this box. Static (no laser sweep): the
+ * marker decoder now searches the full frame (see EyeCaptureArea's
+ * roiWidthFraction = 1f), so this is a framing aid, not a scan-boundary.
+ */
+@Composable
+private fun MarkerAimGuide(modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier) {
+        val boxSize = size.width * 0.6f
+        val left = (size.width - boxSize) / 2
+        val top = (size.height - boxSize) / 2
+        val bracket = boxSize * 0.18f
+        val stroke = Stroke(width = 3.dp.toPx())
+        val color = SaccadenceColors.DarkAccentGuide.copy(alpha = 0.85f)
+
+        listOf(
+            Triple(left, top, Pair(1, 1)),
+            Triple(left + boxSize, top, Pair(-1, 1)),
+            Triple(left, top + boxSize, Pair(1, -1)),
+            Triple(left + boxSize, top + boxSize, Pair(-1, -1)),
+        ).forEach { (x, y, dir) ->
+            val (dx, dy) = dir
+            drawLine(color, Offset(x, y), Offset(x + bracket * dx, y), stroke.width, cap = StrokeCap.Round)
+            drawLine(color, Offset(x, y), Offset(x, y + bracket * dy), stroke.width, cap = StrokeCap.Round)
+        }
     }
 }
 
